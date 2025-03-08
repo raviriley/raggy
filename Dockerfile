@@ -1,8 +1,9 @@
 # Stage 1: Build Frontend
 FROM node:18-alpine AS frontend-builder
 WORKDIR /frontend
-COPY chat-ui/ .
+COPY better-chat-ui/ .
 RUN npm install
+RUN echo "module.exports = { output: 'export' };" >> next.config.js
 RUN npm run build
 
 # Stage 2: Build Backend
@@ -42,8 +43,8 @@ RUN wget https://github.com/qdrant/qdrant/releases/download/v1.13.4/qdrant-x86_6
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Copy frontend files
-COPY --from=frontend-builder /frontend/build /usr/share/nginx/html
+# Copy frontend files - Next.js static export goes to the 'out' directory
+COPY --from=frontend-builder /frontend/out /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/sites-enabled/default
