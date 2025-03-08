@@ -1,23 +1,31 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import './index.css';
+import type { Components } from 'react-markdown';
 
+// Use the Next.js API route that proxies to Docker
+const BACKEND_ROUTE = "/api/routes/chat/";
 
-const BACKEND_ROUTE = "api/routes/chat/";
+interface Message {
+  text: string;
+  type: 'user' | 'bot';
+}
 
-const ChatInterface = () => {
-  const [messages, setMessages] = useState([
+export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([
     {
       text: "Hi, I'm here to help with any questions about Flare! What would you like to know?",
       type: 'bot'
     }
   ]);
-  const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const [pendingTransaction, setPendingTransaction] = useState(null);
-  const messagesEndRef = useRef(null);
+  const [inputText, setInputText] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState<boolean>(false);
+  const [pendingTransaction, setPendingTransaction] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,8 +35,12 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (text) => {
+  const handleSendMessage = async (text: string): Promise<string> => {
     try {
+      setBackendError(null);
+      
+      console.log(`Sending request to: ${BACKEND_ROUTE}`);
+      
       const response = await fetch(BACKEND_ROUTE, {
         method: 'POST',
         headers: {
@@ -38,25 +50,30 @@ const ChatInterface = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('API Response:', data);
 
       // Check if response contains a transaction preview
-      if (data.response.includes('Transaction Preview:')) {
+      if (data.response && data.response.includes('Transaction Preview:')) {
         setAwaitingConfirmation(true);
         setPendingTransaction(text);
       }
 
-      return data.response;
+      return data.response || 'No response from backend';
     } catch (error) {
       console.error('Error:', error);
-      return 'Sorry, there was an error processing your request. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setBackendError(errorMessage);
+      return `Sorry, there was an error connecting to the Docker backend. Please ensure that the Docker container is running.`;
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading) return;
 
@@ -69,7 +86,7 @@ const ChatInterface = () => {
     if (awaitingConfirmation) {
       if (messageText.toUpperCase() === 'CONFIRM') {
         setAwaitingConfirmation(false);
-        const response = await handleSendMessage(pendingTransaction);
+        const response = await handleSendMessage(pendingTransaction as string);
         setMessages(prev => [...prev, { text: response, type: 'bot' }]);
       } else {
         setAwaitingConfirmation(false);
@@ -88,19 +105,22 @@ const ChatInterface = () => {
   };
 
   // Custom components for ReactMarkdown
-  const MarkdownComponents = {
+  const MarkdownComponents: Components = {
     // Override paragraph to remove default margins
     p: ({ children }) => <span className="inline">{children}</span>,
     // Style code blocks
-    code: ({ node, inline, className, children, ...props }) => (
-      inline ?
-        <code className="bg-gray-200 rounded px-1 py-0.5 text-sm">{children}</code> :
+    code: ({ inline, className, children, ...props }: any) => {
+      if (inline) {
+        return <code className="bg-gray-200 rounded px-1 py-0.5 text-sm">{children}</code>;
+      }
+      return (
         <pre className="bg-gray-200 rounded p-2 my-2 overflow-x-auto">
           <code {...props} className="text-sm">{children}</code>
         </pre>
-    ),
+      );
+    },
     // Style links
-    a: ({ node, children, ...props }) => (
+    a: ({ children, ...props }) => (
       <a {...props} className="text-pink-600 hover:underline">{children}</a>
     )
   };
@@ -113,6 +133,15 @@ const ChatInterface = () => {
           <h1 className="text-xl font-bold">Flare AI RAG</h1>
           <p className="text-sm opacity-80">(Based on Flare Dev Hub)</p>
         </div>
+
+        {/* Backend Error Banner */}
+        {backendError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Backend Error: </strong>
+            <span className="block sm:inline">{backendError}</span>
+            <p className="mt-1 text-sm">Please ensure the Docker container is running.</p>
+          </div>
+        )}
 
         {/* Messages container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -133,12 +162,11 @@ const ChatInterface = () => {
                     : 'bg-gray-100 text-gray-800 rounded-bl-none'
                 }`}
               >
-                <ReactMarkdown
-                  components={MarkdownComponents}
-                  className="text-sm break-words whitespace-pre-wrap"
-                >
-                  {message.text}
-                </ReactMarkdown>
+                <div className="text-sm break-words whitespace-pre-wrap">
+                  <ReactMarkdown components={MarkdownComponents}>
+                    {message.text}
+                  </ReactMarkdown>
+                </div>
               </div>
               {message.type === 'user' && (
                 <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold ml-2">
@@ -187,6 +215,4 @@ const ChatInterface = () => {
       </div>
     </div>
   );
-};
-
-export default ChatInterface;
+}
