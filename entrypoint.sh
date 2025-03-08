@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Clean up any previous storage that might cause conflicts
+mkdir -p ./storage
+rm -rf ./storage/*
+chmod -R 777 ./storage
+
 # Start Qdrant in ephemeral mode
 qdrant &
 
