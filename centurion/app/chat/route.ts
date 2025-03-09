@@ -355,7 +355,7 @@ const tools = {
       }
     },
   }),
-  queryTransactionNeighbors: tool({
+  queryTransaction: tool({
     description: `query the transaction neighbors for an address.`,
     parameters: z.object({
       address: z.string().describe("the address to query starting with 0x"),
@@ -411,7 +411,7 @@ export async function POST(req: NextRequest) {
     You are a helpful assistant named Centurion that can answer questions about Flare and help with interactions with Flare apps.
     Always rely on looking up relevant information from your knowledge base to answer questions.
 
-    You can also help with tasks such as token swaps, lending tokens, & borrowing tokens. You can also query for transaction information using the queryTransactionNeighbors tool.
+    You can also help with tasks such as token swaps, lending tokens, & borrowing tokens. You can also query for transaction information using the queryTransaction tool.
 
     When answering questions about token swaps or other blockchain interactions:
 
@@ -428,7 +428,8 @@ export async function POST(req: NextRequest) {
     2. queryLettaAgent - Use this to get additional insights from the Letta agent about blockchain topics
     3. extractAddresses - Use this to extract Ethereum addresses from text
     4. getProtocolInfo - Use this to get detailed information about protocols and how to do specific tasks on the Flare network
-
+    5. queryTransaction - Use this to get detailed information about a transaction
+    
     When the user mentions an Ethereum address (starting with 0x followed by 40 hexadecimal characters), use the getTransactionInfo tool to look it up.
     When the user asks complex blockchain questions, use the queryLettaAgent tool to get specialized knowledge.
     When the user asks how to do something on the Flare network or about specific protocols, use the getProtocolInfo tool to get detailed instructions and documentation.
