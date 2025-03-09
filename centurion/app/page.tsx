@@ -35,8 +35,19 @@ import { ConnectWallet } from "@/components/connect-wallet";
 export default function Home() {
   const router = useRouter();
 
+  const { isConnected, address } = useAccount();
+
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: "/chat",
+    experimental_prepareRequestBody(options) {
+      return {
+        messages: JSON.stringify(options.messages),
+        requestBody: {
+          isUserWalletConnected: isConnected,
+          userWallet: address,
+        },
+      };
+    },
     onFinish: () => {
       toast.success("Response has been created.");
     },
