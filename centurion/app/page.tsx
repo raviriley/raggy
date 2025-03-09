@@ -24,10 +24,13 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { type SwapFormData } from "@/components/swap/swap-card";
+import { SwapCard, type SwapFormData } from "@/components/swap/swap-card";
 import { SwapDialog } from "@/components/swap/swap-dialog";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FLARE_TOKENS } from "@/lib/config";
+import { useAccount } from "wagmi";
+import { ConnectWallet } from "@/components/connect-wallet";
 
 export default function Home() {
   const router = useRouter();
@@ -37,8 +40,8 @@ export default function Home() {
     onFinish: () => {
       toast.success("Response has been created.");
     },
-    onError: () => {
-      toast.error("Error creating response.");
+    onError: (error) => {
+      toast.error(`Error creating response: rate limit exceeded`);
     },
   });
 
@@ -69,7 +72,17 @@ export default function Home() {
   });
 
   // Function to handle form submission
-  const handleSwapSubmit = (data: SwapFormData) => {
+  const handleSwapSubmit = (
+    dataOrEvent: SwapFormData | React.FormEvent<HTMLFormElement>
+  ) => {
+    // If it's a form event, prevent default behavior
+    if ("preventDefault" in dataOrEvent) {
+      dataOrEvent.preventDefault();
+      return;
+    }
+
+    // If we got here, it's SwapFormData
+    const data = dataOrEvent;
     try {
       // Validate the data
       swapFormSchema.parse(data);
@@ -160,15 +173,30 @@ export default function Home() {
                   if (toolName === "swapTokens") {
                     const { result } = toolInvocation;
                     const { fromToken, toToken, amount } = result;
+                    const from = FLARE_TOKENS.find(
+                      (t) =>
+                        t.value.toLowerCase() === fromToken.toLowerCase() ||
+                        t.label.toLowerCase() === fromToken.toLowerCase()
+                    );
+                    const to = FLARE_TOKENS.find(
+                      (t) =>
+                        t.value.toLowerCase() === toToken.toLowerCase() ||
+                        t.label.toLowerCase() === toToken.toLowerCase()
+                    );
                     return (
                       <div key={toolCallId}>
-                        {/* todo */}
-                        {/* <SwapCard
-                          fromToken={fromToken}
-                          toToken={toToken}
-                          amount={amount}
+                        <SwapCard
+                          initialFromToken={from}
+                          initialToToken={to}
+                          initialAmount={amount.toString()}
                           onSubmit={handleSwapSubmit}
-                        /> */}
+                        />
+                      </div>
+                    );
+                  } else if (toolName === "connectUserWallet") {
+                    return (
+                      <div key={toolCallId}>
+                        <ConnectWallet />
                       </div>
                     );
                   }
@@ -221,7 +249,7 @@ export default function Home() {
             }}
           />
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>Ask me anything about Flare.</CommandEmpty>
             <CommandGroup heading="Blockchain Actions">
               <CommandItem onSelect={() => handleCommandSelect("swap")}>
                 <Replace />

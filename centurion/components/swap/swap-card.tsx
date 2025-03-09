@@ -24,16 +24,24 @@ type SwapFormSubmitHandler = {
 };
 
 export function SwapCard({
+  initialFromToken,
+  initialToToken,
+  initialAmount,
   className,
   ...props
 }: Omit<React.ComponentProps<"form">, "onSubmit"> & {
+  initialFromToken?: Token;
+  initialToToken?: Token;
+  initialAmount?: string;
   onSubmit?: SwapFormSubmitHandler;
 }) {
   const { address, isConnected } = useAccount();
   const { executeSwap } = useDirectSwap();
-  const [fromToken, setFromToken] = useState<Token | null>(null);
-  const [toToken, setToToken] = useState<Token | null>(null);
-  const [amount, setAmount] = useState<string>("100");
+  const [fromToken, setFromToken] = useState<Token | null>(
+    initialFromToken || null
+  );
+  const [toToken, setToToken] = useState<Token | null>(initialToToken || null);
+  const [amount, setAmount] = useState<string>(initialAmount || "100");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isApproving, setIsApproving] = useState<boolean>(false);
 
@@ -120,7 +128,7 @@ export function SwapCard({
     >
       <div className="grid gap-2">
         <Label htmlFor="from">From</Label>
-        <ComboBoxResponsive
+        <TokenPicker
           onTokenSelect={setFromToken}
           selectedToken={fromToken}
           label="Select token"
@@ -128,7 +136,7 @@ export function SwapCard({
       </div>
       <div className="grid gap-2">
         <Label htmlFor="to">To</Label>
-        <ComboBoxResponsive
+        <TokenPicker
           onTokenSelect={setToToken}
           selectedToken={toToken}
           label="Select token"
