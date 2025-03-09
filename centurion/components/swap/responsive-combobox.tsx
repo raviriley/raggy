@@ -103,7 +103,7 @@ function TokenList({
               value={token.value}
               onSelect={(value) => {
                 setSelectedToken(
-                  tokens.find((token) => token.value === value) || null
+                  tokens.find((token) => token.value === value) || null,
                 );
                 setOpen(false);
               }}

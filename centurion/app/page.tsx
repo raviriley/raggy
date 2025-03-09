@@ -47,7 +47,7 @@ export default function Home() {
   const [showSwapDialog, setShowSwapDialog] = useState(false);
 
   function onSubmit(
-    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
+    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
 
@@ -82,7 +82,7 @@ export default function Home() {
           },
         },
         null,
-        2
+        2,
       );
 
       // Create an event-like object for handleSubmit
