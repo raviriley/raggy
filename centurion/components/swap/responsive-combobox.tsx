@@ -171,7 +171,7 @@ function TokenList({
             {FLARE_TOKENS.map((token) => (
               <CommandItem
                 key={token.value}
-                value={token.value}
+                value={token.value + " " + token.label}
                 className="flex items-center py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 onSelect={(value) => {
                   setSelectedToken(
