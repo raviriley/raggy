@@ -1,52 +1,17 @@
 "use client";
 
-import { parseUnits, formatUnits } from "viem";
-import { readContract, writeContract, getAccount } from "wagmi/actions";
+import {
+  parseUnits,
+  formatUnits,
+  encodeFunctionData,
+  encodeAbiParameters,
+  parseAbiParameters,
+} from "viem";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+
 import { SPARKDEX_CONTRACTS } from "./config";
+import SparkRouterV2Abi from "../abis/SparkRouterV2Abi.json";
 
-// SparkDex Router ABI (simplified for swap functionality)
-const ROUTER_ABI = [
-  {
-    inputs: [
-      { name: "amountIn", type: "uint256" },
-      { name: "amountOutMin", type: "uint256" },
-      { name: "path", type: "address[]" },
-      { name: "to", type: "address" },
-      { name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactTokensForTokens",
-    outputs: [{ name: "amounts", type: "uint256[]" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { name: "amountOutMin", type: "uint256" },
-      { name: "path", type: "address[]" },
-      { name: "to", type: "address" },
-      { name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactETHForTokens",
-    outputs: [{ name: "amounts", type: "uint256[]" }],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { name: "amountIn", type: "uint256" },
-      { name: "amountOutMin", type: "uint256" },
-      { name: "path", type: "address[]" },
-      { name: "to", type: "address" },
-      { name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactTokensForETH",
-    outputs: [{ name: "amounts", type: "uint256[]" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-];
-
-// ERC20 Token ABI (for approvals)
 const ERC20_ABI = [
   {
     inputs: [
@@ -70,120 +35,189 @@ const ERC20_ABI = [
   },
 ];
 
-// Function to approve token spending
-export async function approveToken(
-  tokenAddress: string,
-  amount: string,
-  decimals: number
-) {
-  try {
-    const account = getAccount();
-    if (!account?.address) throw new Error("No wallet connected");
+// Custom hook for direct swap execution
+export function useDirectSwap() {
+  const { address } = useAccount();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
-    const parsedAmount = parseUnits(amount, decimals);
+  const executeSwap = async (
+    fromToken: string,
+    toToken: string,
+    amount: string,
+    fromDecimals: number,
+    slippagePercentage: number = 2 // Default 2% slippage
+  ) => {
+    if (!address || !walletClient || !publicClient) {
+      throw new Error("Wallet not connected");
+    }
 
-    const hash = await writeContract({
-      address: tokenAddress as `0x${string}`,
-      abi: ERC20_ABI,
-      functionName: "approve",
-      args: [SPARKDEX_CONTRACTS.router as `0x${string}`, parsedAmount],
-    });
+    // Ensure addresses are properly formatted
+    const formatAddress = (addr: string): `0x${string}` => {
+      // If it's the zero address, return it as is
+      if (addr === "0x0000000000000000000000000000000000000000") {
+        return "0x0000000000000000000000000000000000000000";
+      }
 
-    return hash;
-  } catch (error) {
-    console.error("Error approving token:", error);
-    throw error;
-  }
-}
+      // Otherwise, ensure it's a valid checksummed address
+      // First, make sure it starts with 0x
+      const normalizedAddr = addr.startsWith("0x") ? addr : `0x${addr}`;
 
-// Function to check token allowance
-export async function checkAllowance(
-  tokenAddress: string,
-  ownerAddress: string,
-  decimals: number
-) {
-  try {
-    const allowance = await readContract({
-      address: tokenAddress as `0x${string}`,
-      abi: ERC20_ABI,
-      functionName: "allowance",
-      args: [
-        ownerAddress as `0x${string}`,
-        SPARKDEX_CONTRACTS.router as `0x${string}`,
-      ],
-    });
+      // Then ensure it's the correct length
+      if (normalizedAddr.length !== 42) {
+        throw new Error(`Invalid address length: ${normalizedAddr}`);
+      }
 
-    return formatUnits(allowance as bigint, decimals);
-  } catch (error) {
-    console.error("Error checking allowance:", error);
-    throw error;
-  }
-}
+      return normalizedAddr.toLowerCase() as `0x${string}`;
+    };
 
-// Function to perform token swap
-export async function swapTokens(
-  fromToken: string,
-  toToken: string,
-  amount: string,
-  fromDecimals: number,
-  toDecimals: number,
-  slippagePercentage: number = 2 // Default 2% slippage
-) {
-  try {
-    const account = getAccount();
-    if (!account?.address) throw new Error("No wallet connected");
+    const fromTokenAddress = formatAddress(fromToken);
+    const toTokenAddress = formatAddress(toToken);
 
-    const parsedAmount = parseUnits(amount, fromDecimals);
-    const path = [fromToken, toToken];
+    // Parse amount with proper decimals
+    const amountIn = parseUnits(amount, fromDecimals);
 
     // Calculate minimum amount out based on slippage
-    // In a real implementation, you would get a quote from the router first
+    // For a real implementation, you would get a quote from the router first
     const amountOutMin =
-      (parsedAmount * BigInt(100 - slippagePercentage)) / BigInt(100);
+      (amountIn * BigInt(100 - slippagePercentage)) / BigInt(100);
 
     // Set deadline to 20 minutes from now
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
 
-    // Native token (FLR) to token swap
-    if (fromToken === "0x0000000000000000000000000000000000000000") {
-      const hash = await writeContract({
+    // If fromToken is native FLR (address is zero address)
+    const isFromNative =
+      fromTokenAddress === "0x0000000000000000000000000000000000000000";
+    const isToNative =
+      toTokenAddress === "0x0000000000000000000000000000000000000000";
+
+    try {
+      // If not swapping from native token, approve first
+      if (!isFromNative) {
+        console.log("Approving token spend...");
+
+        // Use wallet client directly for approval
+        const approveTxHash = await walletClient.writeContract({
+          address: fromTokenAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [SPARKDEX_CONTRACTS.router as `0x${string}`, amountIn],
+        });
+
+        console.log("Approval transaction submitted:", approveTxHash);
+
+        // Wait for approval transaction to be mined
+        const approvalReceipt = await publicClient.waitForTransactionReceipt({
+          hash: approveTxHash,
+        });
+
+        console.log("Approval confirmed:", approvalReceipt.transactionHash);
+      }
+
+      // For the SparkDEX router, the command byte needs to be properly formatted
+      // Each byte in the commands string corresponds to one input in the inputs array
+      const commands = "0x0b0c" as const; // Two command bytes for two inputs
+
+      let swapInputs: `0x${string}`[] = [];
+
+      if (isFromNative) {
+        // Native FLR to Token swap
+        const v2SwapParams = encodeAbiParameters(
+          parseAbiParameters("uint256, uint256, address[]"),
+          [
+            amountIn, // Amount in
+            amountOutMin, // Min amount out
+            [toTokenAddress], // Path (to token)
+          ]
+        );
+
+        // Include deadline in the recipient parameters
+        const recipientAndDeadline = encodeAbiParameters(
+          parseAbiParameters("address, uint256"),
+          [
+            address, // Recipient
+            deadline, // Deadline
+          ]
+        );
+
+        swapInputs = [v2SwapParams, recipientAndDeadline];
+      } else if (isToNative) {
+        // Token to Native FLR swap
+        const v2SwapParams = encodeAbiParameters(
+          parseAbiParameters("uint256, uint256, address[]"),
+          [
+            amountIn, // Amount in
+            amountOutMin, // Min amount out
+            [fromTokenAddress], // Path (from token)
+          ]
+        );
+
+        const recipientAndDeadline = encodeAbiParameters(
+          parseAbiParameters("address, uint256"),
+          [
+            address, // Recipient
+            deadline, // Deadline
+          ]
+        );
+
+        swapInputs = [v2SwapParams, recipientAndDeadline];
+      } else {
+        // Token to Token swap
+        const v2SwapParams = encodeAbiParameters(
+          parseAbiParameters("uint256, uint256, address[]"),
+          [
+            amountIn, // Amount in
+            amountOutMin, // Min amount out
+            [fromTokenAddress, toTokenAddress], // Path (from token to token)
+          ]
+        );
+
+        const recipientAndDeadline = encodeAbiParameters(
+          parseAbiParameters("address, uint256"),
+          [
+            address, // Recipient
+            deadline, // Deadline
+          ]
+        );
+
+        swapInputs = [v2SwapParams, recipientAndDeadline];
+      }
+
+      // Log the transaction details for debugging
+      console.log("Swap transaction details:");
+      console.log("From token:", fromTokenAddress);
+      console.log("To token:", toTokenAddress);
+      console.log("Amount:", amountIn.toString());
+      console.log("Is from native:", isFromNative);
+      console.log("Commands:", commands);
+      console.log("Swap inputs:", swapInputs);
+
+      // Use wallet client directly for swap execution
+      const swapTxHash = await walletClient.writeContract({
         address: SPARKDEX_CONTRACTS.router as `0x${string}`,
-        abi: ROUTER_ABI,
-        functionName: "swapExactETHForTokens",
-        args: [amountOutMin, [path[1]], account.address, deadline],
-        value: parsedAmount,
+        abi: SparkRouterV2Abi,
+        functionName: "execute",
+        args: [commands, swapInputs],
+        value: isFromNative ? amountIn : BigInt(0),
+        // Add gas buffer
+        gas: BigInt(Math.floor(3000000 * 1.2)), // Use a reasonable gas estimate with buffer
       });
-      return hash;
-    }
 
-    // Token to native token (FLR) swap
-    if (toToken === "0x0000000000000000000000000000000000000000") {
-      const hash = await writeContract({
-        address: SPARKDEX_CONTRACTS.router as `0x${string}`,
-        abi: ROUTER_ABI,
-        functionName: "swapExactTokensForETH",
-        args: [
-          parsedAmount,
-          amountOutMin,
-          [path[0]],
-          account.address,
-          deadline,
-        ],
+      console.log("Swap transaction submitted:", swapTxHash);
+
+      // Wait for swap transaction to be mined
+      const swapReceipt = await publicClient.waitForTransactionReceipt({
+        hash: swapTxHash,
       });
-      return hash;
+
+      console.log("Swap confirmed:", swapReceipt.transactionHash);
+
+      return swapReceipt.transactionHash;
+    } catch (error) {
+      console.error("Error executing swap:", error);
+      throw error;
     }
+  };
 
-    // Token to token swap
-    const hash = await writeContract({
-      address: SPARKDEX_CONTRACTS.router as `0x${string}`,
-      abi: ROUTER_ABI,
-      functionName: "swapExactTokensForTokens",
-      args: [parsedAmount, amountOutMin, path, account.address, deadline],
-    });
-
-    return hash;
-  } catch (error) {
-    console.error("Error swapping tokens:", error);
-    throw error;
-  }
+  return { executeSwap };
 }

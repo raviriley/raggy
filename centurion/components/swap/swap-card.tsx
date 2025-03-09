@@ -8,7 +8,7 @@ import { ComboBoxResponsive, Token } from "./responsive-combobox";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
-import { approveToken, swapTokens } from "@/lib/sparkdex";
+import { useDirectSwap } from "@/lib/sparkdex";
 import { Loader2 } from "lucide-react";
 
 export type SwapFormData = {
@@ -24,6 +24,7 @@ export function SwapCard({
   onSubmit?: (data: SwapFormData) => void;
 }) {
   const { address, isConnected } = useAccount();
+  const { executeSwap } = useDirectSwap();
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
   const [amount, setAmount] = useState<string>("100");
@@ -55,45 +56,53 @@ export function SwapCard({
       amount: parseFloat(amount),
     };
 
-    // If onSubmit is provided, call it with the form data
-    if (onSubmit) {
-      onSubmit(formData);
-      return;
-    }
-
-    // Otherwise, perform the swap directly
+    // Perform the swap directly
     try {
       setIsLoading(true);
 
-      // Check if approval is needed for non-native tokens
-      if (fromToken.address !== "0x0000000000000000000000000000000000000000") {
-        setIsApproving(true);
-        // Approve token spending
-        const approvalHash = await approveToken(
-          fromToken.address!,
-          amount,
-          fromToken.decimals || 18
-        );
+      toast.info(
+        `Preparing to swap ${amount} ${fromToken.label} to ${toToken.label}...`
+      );
 
-        toast.success(`Token approval submitted: ${approvalHash}`);
-        setIsApproving(false);
-      }
-
-      // Perform the swap
-      const swapHash = await swapTokens(
+      // Execute the swap directly using wagmi
+      const txHash = await executeSwap(
         fromToken.address!,
         toToken.address!,
         amount,
-        fromToken.decimals || 18,
-        toToken.decimals || 18
+        fromToken.decimals || 18
       );
 
-      toast.success(`Swap transaction submitted: ${swapHash}`);
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <div>Swap transaction submitted!</div>
+          <a
+            href={`https://flarescan.com/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs underline"
+          >
+            View on FlareScan
+          </a>
+        </div>
+      );
+
+      // If onSubmit is provided, call it with the form data
+      if (onSubmit) {
+        onSubmit(formData);
+      }
     } catch (error: any) {
-      toast.error(`Error: ${error.message || "Failed to swap tokens"}`);
+      console.error("Swap error:", error);
+
+      // Provide more user-friendly error messages
+      if (error.message?.includes("user rejected")) {
+        toast.error("Transaction was rejected by the user");
+      } else if (error.message?.includes("insufficient funds")) {
+        toast.error("Insufficient funds for this transaction");
+      } else {
+        toast.error(`Error: ${error.message || "Failed to swap tokens"}`);
+      }
     } finally {
       setIsLoading(false);
-      setIsApproving(false);
     }
   };
 
@@ -135,17 +144,8 @@ export function SwapCard({
       >
         {isLoading ? (
           <>
-            {isApproving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Approving...
-              </>
-            ) : (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Swapping...
-              </>
-            )}
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Swapping...
           </>
         ) : !isConnected ? (
           "Connect Wallet to Swap"

@@ -23,9 +23,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SwapCard, type SwapFormData } from "@/components/swap/swap-card";
+import { type SwapFormData } from "@/components/swap/swap-card";
+import { SwapDialog } from "@/components/swap/swap-dialog";
 import { z } from "zod";
-import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
@@ -136,19 +136,6 @@ export default function Home() {
     setShowingCommands(false);
   };
 
-  // Create a wrapper component for the swap form
-  function SwapFormWrapper() {
-    return (
-      <ResponsiveDialog
-        title="Swap Tokens"
-        description="Swap tokens on SparkDex"
-        onClose={() => setShowSwapDialog(false)}
-      >
-        <SwapCard onSubmit={handleSwapSubmit} />
-      </ResponsiveDialog>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="text-xl font-bold">
@@ -199,8 +186,8 @@ export default function Home() {
           </div>
         </div>
       ))}
-      {/* Render the SwapForm component when showSwapDialog is true */}
-      {showSwapDialog && <SwapFormWrapper />}
+      {/* Render the SwapDialog component when showSwapDialog is true */}
+      <SwapDialog open={showSwapDialog} onOpenChange={setShowSwapDialog} />
       <form onSubmit={onSubmit}>
         <Command
           className="rounded-lg border shadow-md md:min-w-[450px]"
