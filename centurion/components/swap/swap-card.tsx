@@ -17,10 +17,9 @@ export type SwapFormData = {
   amount: number;
 };
 
-// Define a custom type for the onSubmit prop that can handle both form events and SwapFormData
+// Define a type for the onSubmit prop that can handle both form events and SwapFormData
 type SwapFormSubmitHandler = {
   (data: SwapFormData): void;
-  (event: React.FormEvent<HTMLFormElement>): void;
 };
 
 export function SwapCard({
@@ -28,7 +27,7 @@ export function SwapCard({
   initialToToken,
   initialAmount,
   className,
-  ...props
+  onSubmit,
 }: Omit<React.ComponentProps<"form">, "onSubmit"> & {
   initialFromToken?: Token;
   initialToToken?: Token;
@@ -101,8 +100,8 @@ export function SwapCard({
       );
 
       // If onSubmit is provided, call it with the form data
-      if (props.onSubmit) {
-        props.onSubmit(formData);
+      if (onSubmit) {
+        onSubmit(formData);
       }
     } catch (error: any) {
       console.error("Swap error:", error);
@@ -113,7 +112,7 @@ export function SwapCard({
       } else if (error.message?.includes("insufficient funds")) {
         toast.error("Insufficient funds for this transaction");
       } else {
-        toast.error(`Swap failed: ${error.message || "Unknown error"}`);
+        toast.error(`Error: ${error.message || "Failed to swap tokens"}`);
       }
     } finally {
       setIsLoading(false);
@@ -124,7 +123,6 @@ export function SwapCard({
     <form
       className={cn("grid items-start gap-4", className)}
       onSubmit={handleSubmit}
-      {...props}
     >
       <div className="grid gap-2">
         <Label htmlFor="from">From</Label>
@@ -154,18 +152,12 @@ export function SwapCard({
       </div>
       <Button
         type="submit"
-        disabled={isLoading || isApproving || !isConnected}
-        className="w-full"
+        disabled={isLoading || !isConnected || !fromToken || !toToken}
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Swapping...
-          </>
-        ) : isApproving ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Approving...
           </>
         ) : !isConnected ? (
           "Connect Wallet to Swap"
