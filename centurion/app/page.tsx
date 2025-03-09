@@ -5,6 +5,7 @@ import {
   Banknote,
   CloudUpload,
   HandCoins,
+  PiggyBank,
   Replace,
   Search,
 } from "lucide-react";
@@ -127,10 +128,10 @@ export default function Home() {
                 <Banknote />
                 <span>Borrow Assets</span>
               </CommandItem>
-              <CommandItem onSelect={() => handleCommandSelect("store")}>
+              {/* <CommandItem onSelect={() => handleCommandSelect("store")}>
                 <CloudUpload />
                 <span>Store Data</span>
-              </CommandItem>
+              </CommandItem> */}
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="External Actions">
@@ -151,6 +152,15 @@ export default function Home() {
               >
                 <ArrowUpRight />
                 <span>FAssets</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  router.push("https://app.kinetic.market/stake");
+                  handleCommandSelect("stake");
+                }}
+              >
+                <PiggyBank />
+                <span>Kinetic Staking</span>
               </CommandItem>
             </CommandGroup>
           </CommandList>
