@@ -103,7 +103,7 @@ export default function Home() {
           }}
         >
           <CommandInput
-            placeholder="Type a command or search..."
+            placeholder="Type a command, search for on-chain data, or take actions by describing what you want to do."
             value={input}
             onValueChange={(value) => {
               handleInputChange({ target: { value } } as any);
