@@ -1,20 +1,9 @@
 #!/bin/bash
 
-# Clean up any previous storage that might cause conflicts
-mkdir -p ./storage
-rm -rf ./storage/*
-chmod -R 777 ./storage
+# This script is no longer needed for the core functionality 
+# as PostgreSQL is managed directly through supervisord and 
+# initialization is handled by Docker's PostgreSQL entrypoint scripts
 
-# Start Qdrant in ephemeral mode
-qdrant &
-
-# Wait until Qdrant is ready
-echo "Waiting for Qdrant to initialize..."
-until curl -s http://127.0.0.1:6333/collections >/dev/null; do
-  echo "Qdrant is not ready yet, waiting..."
-  sleep 10
-done
-echo "Qdrant is up and running!"
-
-# Start RAG application
-uv run start-backend
+# However, we'll keep this file for any custom setup that may be needed
+echo "Starting services with supervisord..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
