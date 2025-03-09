@@ -42,7 +42,7 @@ export function TokenPicker({
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [localSelectedToken, setLocalSelectedToken] = useState<Token | null>(
-    selectedToken || null
+    selectedToken || null,
   );
 
   const handleTokenSelect = (token: Token | null) => {
@@ -175,7 +175,7 @@ function TokenList({
                 className="flex items-center py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 onSelect={(value) => {
                   setSelectedToken(
-                    FLARE_TOKENS.find((token) => token.value === value) || null
+                    FLARE_TOKENS.find((token) => token.value === value) || null,
                   );
                   setOpen(false);
                 }}

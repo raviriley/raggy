@@ -62,7 +62,7 @@ export default function Home() {
   const [showSwapDialog, setShowSwapDialog] = useState(false);
 
   function onSubmit(
-    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
+    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
 
@@ -82,7 +82,7 @@ export default function Home() {
 
   // Function to handle form submission
   const handleSwapSubmit = (
-    dataOrEvent: SwapFormData | React.FormEvent<HTMLFormElement>
+    dataOrEvent: SwapFormData | React.FormEvent<HTMLFormElement>,
   ) => {
     // If it's a form event, prevent default behavior
     if ("preventDefault" in dataOrEvent) {
@@ -107,7 +107,7 @@ export default function Home() {
           },
         },
         null,
-        2
+        2,
       );
 
       // Create an event-like object for handleSubmit
@@ -185,12 +185,12 @@ export default function Home() {
                     const from = FLARE_TOKENS.find(
                       (t) =>
                         t.value.toLowerCase() === fromToken?.toLowerCase() ||
-                        t.label.toLowerCase() === fromToken?.toLowerCase()
+                        t.label.toLowerCase() === fromToken?.toLowerCase(),
                     );
                     const to = FLARE_TOKENS.find(
                       (t) =>
                         t.value.toLowerCase() === toToken?.toLowerCase() ||
-                        t.label.toLowerCase() === toToken?.toLowerCase()
+                        t.label.toLowerCase() === toToken?.toLowerCase(),
                     );
                     return (
                       <div key={toolCallId}>

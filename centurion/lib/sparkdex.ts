@@ -46,7 +46,7 @@ export function useDirectSwap() {
     toToken: string,
     amount: string,
     fromDecimals: number,
-    slippagePercentage: number = 2 // Default 2% slippage
+    slippagePercentage: number = 2, // Default 2% slippage
   ) => {
     if (!address || !walletClient || !publicClient) {
       throw new Error("Wallet not connected");
@@ -128,7 +128,7 @@ export function useDirectSwap() {
             amountIn, // Amount in
             amountOutMin, // Min amount out
             [toTokenAddress], // Path (to token)
-          ]
+          ],
         );
 
         // Include deadline in the recipient parameters
@@ -137,7 +137,7 @@ export function useDirectSwap() {
           [
             address, // Recipient
             deadline, // Deadline
-          ]
+          ],
         );
 
         swapInputs = [v2SwapParams, recipientAndDeadline];
@@ -149,7 +149,7 @@ export function useDirectSwap() {
             amountIn, // Amount in
             amountOutMin, // Min amount out
             [fromTokenAddress], // Path (from token)
-          ]
+          ],
         );
 
         const recipientAndDeadline = encodeAbiParameters(
@@ -157,7 +157,7 @@ export function useDirectSwap() {
           [
             address, // Recipient
             deadline, // Deadline
-          ]
+          ],
         );
 
         swapInputs = [v2SwapParams, recipientAndDeadline];
@@ -169,7 +169,7 @@ export function useDirectSwap() {
             amountIn, // Amount in
             amountOutMin, // Min amount out
             [fromTokenAddress, toTokenAddress], // Path (from token to token)
-          ]
+          ],
         );
 
         const recipientAndDeadline = encodeAbiParameters(
@@ -177,7 +177,7 @@ export function useDirectSwap() {
           [
             address, // Recipient
             deadline, // Deadline
-          ]
+          ],
         );
 
         swapInputs = [v2SwapParams, recipientAndDeadline];

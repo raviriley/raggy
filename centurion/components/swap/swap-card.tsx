@@ -37,7 +37,7 @@ export function SwapCard({
   const { address, isConnected } = useAccount();
   const { executeSwap } = useDirectSwap();
   const [fromToken, setFromToken] = useState<Token | null>(
-    initialFromToken || null
+    initialFromToken || null,
   );
   const [toToken, setToToken] = useState<Token | null>(initialToToken || null);
   const [amount, setAmount] = useState<string>(initialAmount || "100");
@@ -74,7 +74,7 @@ export function SwapCard({
       setIsLoading(true);
 
       toast.info(
-        `Preparing to swap ${amount} ${fromToken.label} to ${toToken.label}...`
+        `Preparing to swap ${amount} ${fromToken.label} to ${toToken.label}...`,
       );
 
       // Execute the swap directly using wagmi
@@ -82,7 +82,7 @@ export function SwapCard({
         fromToken.address!,
         toToken.address!,
         amount,
-        fromToken.decimals || 18
+        fromToken.decimals || 18,
       );
 
       toast.success(
@@ -96,7 +96,7 @@ export function SwapCard({
           >
             View on FlareScan
           </a>
-        </div>
+        </div>,
       );
 
       // If onSubmit is provided, call it with the form data

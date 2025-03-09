@@ -1,4 +1,4 @@
-import { streamText, tool } from "ai";
+import { Message, streamText, tool } from "ai";
 import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -26,17 +26,26 @@ const tools = {
       amount_in: z.number().describe("the amount of tokens to swap"),
       wallet_to_swap_from: z.string().describe("the wallet to swap from"),
     }),
-    execute: async ({ token_in, token_out, amount_in, wallet_to_swap_from }) =>
-      {
-        const result = await swapTokens({ token_in, token_out, amount_in, wallet_to_swap_from });
-        return {
-          type: "text",
-          text: `Set up the swap of ${amount_in} ${token_in} for ${token_out}`,
-          fromToken: token_in,
-          toToken: token_out,
-          amount: amount_in,
-        };
-      },
+    execute: async ({
+      token_in,
+      token_out,
+      amount_in,
+      wallet_to_swap_from,
+    }) => {
+      const result = await swapTokens({
+        token_in,
+        token_out,
+        amount_in,
+        wallet_to_swap_from,
+      });
+      return {
+        type: "text",
+        text: `Set up the swap of ${amount_in} ${token_in} for ${token_out}`,
+        fromToken: token_in,
+        toToken: token_out,
+        amount: amount_in,
+      };
+    },
   }),
   getInformation: tool({
     description: `get information from your knowledge base to answer questions.`,
