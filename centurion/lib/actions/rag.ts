@@ -1,6 +1,7 @@
 "use server";
 
 import { Pool } from "pg";
+import { recordAttestation } from "../attestation";
 
 // Define the result row type
 interface DocumentRow {
@@ -88,10 +89,38 @@ export async function findRelevantContent(question: string) {
       })
       .join("\n");
 
-    // 4. Return the formatted string
+    // 4. Record the attestation for this RAG operation
+    await recordAttestation({
+      toolName: "RAG",
+      actionType: "search",
+      query: question,
+      result: formattedResults,
+      metadata: {
+        similarityScores: result.rows.map(row => ({
+          documentId: row.id,
+          similarity: row.similarity
+        })),
+        embeddingDimension: questionEmbedding.length
+      }
+    });
+
+    // 5. Return the formatted string
     return formattedResults || "No relevant content found.";
   } catch (error) {
     console.error("Error searching for relevant content:", error);
+    
+    // Record error attestation
+    await recordAttestation({
+      toolName: "RAG",
+      actionType: "search_error",
+      query: question,
+      result: (error as Error).message,
+      metadata: {
+        errorType: (error as Error).name,
+        stack: (error as Error).stack
+      }
+    });
+    
     return "Error retrieving relevant content. Please try again.";
   }
 }

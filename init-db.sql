@@ -31,6 +31,22 @@ CREATE TABLE embeddings (
 -- Create an index on the embedding vector for similarity search
 CREATE INDEX ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
+-- Create attestations table for tool and RAG operation tracking
+CREATE TABLE IF NOT EXISTS attestations (
+  id VARCHAR(36) PRIMARY KEY,
+  tool_name VARCHAR(100) NOT NULL,
+  action_type VARCHAR(100) NOT NULL,
+  query TEXT,
+  result TEXT,
+  metadata JSONB,
+  timestamp TIMESTAMP NOT NULL
+);
+
+-- Create indexes for faster attestation queries
+CREATE INDEX IF NOT EXISTS idx_attestations_tool_name ON attestations(tool_name);
+CREATE INDEX IF NOT EXISTS idx_attestations_action_type ON attestations(action_type);
+CREATE INDEX IF NOT EXISTS idx_attestations_timestamp ON attestations(timestamp);
+
 -- Grant privileges to the application user
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO raggy_user;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO raggy_user; 
