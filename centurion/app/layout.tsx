@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
 import { WalletProvider } from "@/components/wallet-provider";
 import { ConnectWallet } from "@/components/connect-wallet";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,8 @@ export default function RootLayout({
           <WalletProvider>
             <div className="flex flex-col h-screen">
               <header className="flex items-center justify-between p-4 border-b border-pink-800">
-                <h1 className="text-2xl font-bold">Centurion</h1>
+                {/* <h1 className="text-2xl font-bold">Centurion</h1> */}
+                <Image src="/logo.png" alt="Centurion" width={96} height={96} />
                 <div className="flex items-center gap-4">
                   <ConnectWallet />
                   <ThemeToggle />
