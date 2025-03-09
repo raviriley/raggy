@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ComboBoxResponsive } from "./responsive-combobox";
 
-function Swap({ className }: React.ComponentProps<"form">) {
+export function SwapCard({ className }: React.ComponentProps<"form">) {
   return (
     <form className={cn("grid items-start gap-4", className)}>
       <div className="grid gap-2">
@@ -28,7 +28,7 @@ function Swap({ className }: React.ComponentProps<"form">) {
 export function SwapForm() {
   return (
     <ResponsiveDialog title="Swap" description="Swap tokens">
-      <Swap />
+      <SwapCard />
     </ResponsiveDialog>
   );
 }
