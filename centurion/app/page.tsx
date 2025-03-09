@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SwapForm, SwapFormData } from "@/components/swap/swap-form";
+import { z } from "zod";
 
 export default function Home() {
   const router = useRouter();
@@ -41,6 +43,9 @@ export default function Home() {
   const [commandValue, setCommandValue] = useState("");
   const [showingCommands, setShowingCommands] = useState(false);
 
+  // Add state to control dialog visibility
+  const [showSwapDialog, setShowSwapDialog] = useState(false);
+
   function onSubmit(
     e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
   ) {
@@ -48,15 +53,80 @@ export default function Home() {
 
     // Only submit the message if not using command UI
     if (!showingCommands) {
+      setShowSwapDialog(false);
       handleSubmit(e);
     }
   }
 
+  // Create schema for swap form validation
+  const swapFormSchema = z.object({
+    from: z.string().min(1, "From token is required"),
+    to: z.string().min(1, "To token is required"),
+    amount: z.number().positive("Amount must be positive"),
+  });
+
+  // Function to handle form submission
+  const handleSwapSubmit = (data: SwapFormData) => {
+    try {
+      // Validate the data
+      swapFormSchema.parse(data);
+
+      // Format the data as JSON
+      const formattedData = JSON.stringify(
+        {
+          action: "swap",
+          data: {
+            fromToken: data.from,
+            toToken: data.to,
+            amount: data.amount,
+          },
+        },
+        null,
+        2
+      );
+
+      // Create an event-like object for handleSubmit
+      const mockEvent = {
+        // todo: remove this
+        preventDefault: () => {},
+      };
+
+      // Send the formatted data to the chat
+      handleInputChange({ target: { value: formattedData } } as any);
+      handleSubmit(mockEvent as any);
+
+      // Show success message
+      toast.success("Swap request submitted");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(`Validation error: ${error.errors[0].message}`);
+      } else {
+        toast.error("An error occurred submitting the swap request");
+      }
+    }
+  };
+
   // Function to handle command selections
   const handleCommandSelect = (value: string) => {
     console.log(`Selected command: ${value}`);
-    // Here you would implement the specific action for each command
-    toast.success(`Executing command: ${value}`);
+
+    // Handle different commands
+    switch (value) {
+      case "swap":
+        setShowSwapDialog(true);
+        break;
+      case "lend":
+        toast.info("Lend functionality coming soon");
+        break;
+      case "borrow":
+        toast.info("Borrow functionality coming soon");
+        break;
+      case "store":
+        toast.info("Store Data functionality coming soon");
+        break;
+      default:
+        toast.info(`Command ${value} selected`);
+    }
 
     // Clear the command UI state
     setShowingCommands(false);
@@ -81,6 +151,13 @@ export default function Home() {
           </div>
         </div>
       ))}
+      {/* Render the SwapForm component when showSwapDialog is true */}
+      {showSwapDialog && (
+        <SwapForm
+          onSubmit={handleSwapSubmit}
+          onClose={() => setShowSwapDialog(false)}
+        />
+      )}
       <form onSubmit={onSubmit}>
         <Command
           className="rounded-lg border shadow-md md:min-w-[450px]"
