@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { SwapCard, type SwapFormData } from "@/components/swap/swap-card";
 import { z } from "zod";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const router = useRouter();
@@ -162,6 +163,37 @@ export default function Home() {
             <div className="font-bold">{m.role}</div>
             <div className="text-sm text-gray-500">
               {m.toolInvocations?.map((t) => t.toolName).join(", ")}
+            </div>
+            <div>
+              {m.toolInvocations?.map((toolInvocation) => {
+                const { toolName, toolCallId, state } = toolInvocation;
+
+                if (state === "result") {
+                  if (toolName === "swapTokens") {
+                    const { result } = toolInvocation;
+                    const { fromToken, toToken, amount } = result;
+                    return (
+                      <div key={toolCallId}>
+                        {/* todo */}
+                        {/* <SwapCard
+                          fromToken={fromToken}
+                          toToken={toToken}
+                          amount={amount}
+                          onSubmit={handleSwapSubmit}
+                        /> */}
+                      </div>
+                    );
+                  }
+                } else {
+                  return (
+                    <div key={toolCallId}>
+                      {toolName === "swapTokens" ? (
+                        <Skeleton className="h-4 w-24" />
+                      ) : null}
+                    </div>
+                  );
+                }
+              })}
             </div>
             <p>{m.content}</p>
           </div>

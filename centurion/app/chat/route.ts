@@ -19,7 +19,7 @@ import { findRelevantContent } from "@/lib/actions/rag";
 
 const tools = {
   swapTokens: tool({
-    description: `swap tokens between two wallets.`,
+    description: `swap from one token to another using sparkdex, a decentralized exchange on the flare network.`,
     parameters: z.object({
       token_in: z.string().describe("the token to swap"),
       token_out: z.string().describe("the token to receive"),
@@ -39,8 +39,10 @@ const tools = {
 };
 
 const systemPrompt = `
-You are a helpful assistant that can answer questions and help with tasks.
+You are a helpful assistant named Centurion that can answer questions about Flare and help with interactions with Flare apps.
 Always rely on looking up relevant information from your knowledge base to answer questions.
+
+You can also help with tasks such as token swaps, lending tokens, borrowing tokens, and storing data on-chain.
 `;
 
 export async function POST(req: NextRequest) {
