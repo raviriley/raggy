@@ -288,13 +288,13 @@ const tools = {
       };
     },
   }),
-  getInformation: tool({
-    description: `get information from your knowledge base to answer questions.`,
-    parameters: z.object({
-      question: z.string().describe("the users question"),
-    }),
-    execute: async ({ question }) => findRelevantContent(question),
-  }),
+  // getInformation: tool({
+  //   description: `get information from your knowledge base to answer questions.`,
+  //   parameters: z.object({
+  //     question: z.string().describe("the users question"),
+  //   }),
+  //   execute: async ({ question }) => findRelevantContent(question),
+  // }),
   getProtocolInfo: tool({
     description: `get information about protocols and how to do something on the Flare network by querying a specialized database of protocol documentation.`,
     parameters: z.object({
