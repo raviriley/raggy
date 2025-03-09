@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   const result = streamText({
     model,
-    toolChoice: "required",
+    toolChoice: "auto",
     maxSteps: 4,
     system: systemPrompt,
     messages,

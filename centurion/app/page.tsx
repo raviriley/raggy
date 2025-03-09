@@ -5,11 +5,9 @@ import {
   Banknote,
   CloudUpload,
   HandCoins,
+  PiggyBank,
   Replace,
   Search,
-  SearchCode,
-  Settings,
-  Smile,
 } from "lucide-react";
 import {
   Command,
@@ -21,13 +19,15 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-
 import { useChat } from "@ai-sdk/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: "/chat",
     onFinish: () => {
@@ -38,12 +38,30 @@ export default function Home() {
     },
   });
 
+  // Add state to track if command UI is active
+  const [commandValue, setCommandValue] = useState("");
+  const [showingCommands, setShowingCommands] = useState(false);
+
   function onSubmit(
     e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
-    handleSubmit(e);
+
+    // Only submit the message if not using command UI
+    if (!showingCommands) {
+      handleSubmit(e);
+    }
   }
+
+  // Function to handle command selections
+  const handleCommandSelect = (value: string) => {
+    console.log(`Selected command: ${value}`);
+    // Here you would implement the specific action for each command
+    toast.success(`Executing command: ${value}`);
+
+    // Clear the command UI state
+    setShowingCommands(false);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,54 +87,80 @@ export default function Home() {
           className="rounded-lg border shadow-md md:min-w-[450px]"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
+              // If command menu is active, let it handle the Enter event
+              if (showingCommands) {
+                return;
+              }
               onSubmit(e);
             }
           }}
+          // Use value and onValueChange to detect when command filtering is active
+          value={commandValue}
+          onValueChange={(value) => {
+            setCommandValue(value);
+            // If there's any value, we're in command mode
+            setShowingCommands(value.length > 0);
+          }}
         >
           <CommandInput
-            placeholder="Type a command or search..."
+            placeholder="Type a command, search for on-chain data, or take actions by describing what you want to do."
             value={input}
-            onValueChange={(value) =>
-              handleInputChange({ target: { value } } as any)
-            }
+            onValueChange={(value) => {
+              handleInputChange({ target: { value } } as any);
+              // Update command value to match input
+              setCommandValue(value);
+              // If there's any value, we're in command mode
+              setShowingCommands(value.length > 0);
+            }}
           />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup heading="Blockchain Actions">
-              <CommandItem>
+              <CommandItem onSelect={() => handleCommandSelect("swap")}>
                 <Replace />
                 <span>Swap Tokens</span>
               </CommandItem>
-              <CommandItem>
-                <CloudUpload />
-                <span>Store Data</span>
-              </CommandItem>
-              <CommandItem>
+              <CommandItem onSelect={() => handleCommandSelect("lend")}>
                 <HandCoins />
                 <span>Lend Assets</span>
               </CommandItem>
-              <CommandItem>
+              <CommandItem onSelect={() => handleCommandSelect("borrow")}>
                 <Banknote />
                 <span>Borrow Assets</span>
-                {/* <CommandShortcut>⌘B</CommandShortcut> */}
               </CommandItem>
+              {/* <CommandItem onSelect={() => handleCommandSelect("store")}>
+                <CloudUpload />
+                <span>Store Data</span>
+              </CommandItem> */}
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="External Actions">
-              <CommandItem asChild>
-                <Link href="https://flarescan.com/" target="_blank">
-                  <Search />
-                  <span>Explorer</span>
-                </Link>
+              <CommandItem
+                onSelect={() => {
+                  handleCommandSelect("explorer");
+                  router.push("https://flarescan.com/");
+                }}
+              >
+                <Search />
+                <span>Explorer</span>
               </CommandItem>
-              <CommandItem asChild>
-                <Link
-                  href="https://fasset.oracle-daemon.com/sgb"
-                  target="_blank"
-                >
-                  <ArrowUpRight />
-                  <span>FAssets</span>
-                </Link>
+              <CommandItem
+                onSelect={() => {
+                  router.push("https://fasset.oracle-daemon.com/sgb");
+                  handleCommandSelect("fassets");
+                }}
+              >
+                <ArrowUpRight />
+                <span>FAssets</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  router.push("https://app.kinetic.market/stake");
+                  handleCommandSelect("stake");
+                }}
+              >
+                <PiggyBank />
+                <span>Kinetic Staking</span>
               </CommandItem>
             </CommandGroup>
           </CommandList>
