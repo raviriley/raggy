@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Centurion",
+  title: "Command Flare | Centurion Agent",
   description:
     "Centurion is a platform for graph-RAG based agentic DeFAI interactions running in a TEE.",
 };
