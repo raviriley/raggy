@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  parseUnits,
-  formatUnits,
-  encodeFunctionData,
-  encodeAbiParameters,
-  parseAbiParameters,
-} from "viem";
+import { parseUnits, encodeAbiParameters, parseAbiParameters } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
 import { SPARKDEX_CONTRACTS } from "./config";

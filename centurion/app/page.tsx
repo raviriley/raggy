@@ -53,7 +53,7 @@ export default function Home() {
       toast.dismiss(loadingToast);
       toast.success("Response has been created.");
     },
-    onError: (error) => {
+    onError: () => {
       toast.dismiss(loadingToast);
       toast.error(`Error creating response: rate limit exceeded`);
     },

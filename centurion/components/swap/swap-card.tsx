@@ -34,7 +34,7 @@ export function SwapCard({
   initialAmount?: string;
   onSubmit?: SwapFormSubmitHandler;
 }) {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const { executeSwap } = useDirectSwap();
   const [fromToken, setFromToken] = useState<Token | null>(
     initialFromToken || null,
@@ -42,7 +42,6 @@ export function SwapCard({
   const [toToken, setToToken] = useState<Token | null>(initialToToken || null);
   const [amount, setAmount] = useState<string>(initialAmount || "100");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isApproving, setIsApproving] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
