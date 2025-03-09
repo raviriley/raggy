@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SwapForm, SwapFormData } from "@/components/swap/swap-form";
+import { SwapForm } from "@/components/swap/swap-form";
 import { z } from "zod";
 
 export default function Home() {
@@ -66,7 +66,7 @@ export default function Home() {
   });
 
   // Function to handle form submission
-  const handleSwapSubmit = (data: SwapFormData) => {
+  const handleSwapSubmit = (data: z.infer<typeof swapFormSchema>) => {
     try {
       // Validate the data
       swapFormSchema.parse(data);
