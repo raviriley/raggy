@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { StreamingTextResponse } from "ai";
 
 // Configuration
 const LETTA_BASE_URL = "http://34.162.165.188:8283/v1/agents/";
@@ -198,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🚀 [LETTA QUERY] Returning streaming response to client`);
     // Return a streaming response
-    return new StreamingTextResponse(stream);
+    return stream;
   } catch (error) {
     console.error("❌ [LETTA QUERY] Unexpected error:", error);
     return NextResponse.json(

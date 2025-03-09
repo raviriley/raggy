@@ -7,23 +7,23 @@ const LETTA_API_URL = "http://34.162.165.188:8283/v1/agents/";
 const SOURCE_IDS_FILE = path.join(process.cwd(), "letta-source-ids.txt");
 const AGENT_ID_FILE = path.join(process.cwd(), "letta-agent-id.txt");
 
-interface AgentConfig {
-  name: string;
-  description: string;
-  agent_type: string;
-  llm_config: {
-    model: string;
-    model_endpoint_type: string;
-    context_window: number;
-    temperature: number;
-    max_tokens: number;
-  };
-  embedding_config: {
-    embedding_endpoint_type: string;
-    embedding_model: string;
-    embedding_dim: number;
-  };
-}
+// interface AgentConfig {
+//   name: string;
+//   description: string;
+//   agent_type: string;
+//   llm_config: {
+//     model: string;
+//     model_endpoint_type: string;
+//     context_window: number;
+//     temperature: number;
+//     max_tokens: number;
+//   };
+//   embedding_config: {
+//     embedding_endpoint_type: string;
+//     embedding_model: string;
+//     embedding_dim: number;
+//   };
+// }
 
 export async function POST(request: NextRequest) {
   console.log("📋 [LETTA CREATE] Request received to create a new agent");
@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
         errorMessage = `${errorMessage}. Details: ${JSON.stringify(errorData)}`;
       } catch (e) {
         // If we can't parse the error as JSON, just use the original error message
+        console.error("Error parsing error response:", e);
       }
 
       return NextResponse.json(
