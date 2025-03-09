@@ -1,9 +1,11 @@
--- Enable pgvector extension
-CREATE EXTENSION IF NOT EXISTS vector;
-
 -- Create our application database
 CREATE DATABASE raggy;
+
+-- Connect to the raggy database
 \c raggy
+
+-- Enable pgvector extension in the raggy database
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Create application user with same credentials as in Dockerfile
 CREATE USER raggy_user WITH PASSWORD 'changeme';
@@ -22,7 +24,7 @@ CREATE TABLE documents (
 CREATE TABLE embeddings (
     id SERIAL PRIMARY KEY,
     document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
-    embedding VECTOR(1536),  -- Adjust dimension based on your embedding model
+    embedding vector(1536),  -- Adjust dimension based on your embedding model
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

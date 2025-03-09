@@ -1,9 +1,17 @@
 #!/bin/bash
 
-# This script is no longer needed for the core functionality 
-# as PostgreSQL is managed directly through supervisord and 
-# initialization is handled by Docker's PostgreSQL entrypoint scripts
+# This script ensures all services start properly
 
-# However, we'll keep this file for any custom setup that may be needed
-echo "Starting services with supervisord..."
+# Wait for PostgreSQL to be ready
+wait_for_postgres() {
+  echo "Waiting for PostgreSQL to start..."
+  until pg_isready -h localhost -p 5432 -U postgres > /dev/null 2>&1; do
+    echo "PostgreSQL is not ready yet, waiting..."
+    sleep 3
+  done
+  echo "PostgreSQL is up and running!"
+}
+
+# Start supervisord which will manage both nginx and PostgreSQL
+echo "Starting supervisord..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

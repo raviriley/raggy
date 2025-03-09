@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  raggy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80" # Web UI
+      - "5432:5432" # PostgreSQL
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - RAGGY_USER=raggy_user
+      - RAGGY_PASSWORD=changeme
+      - RAGGY_DB=raggy
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
