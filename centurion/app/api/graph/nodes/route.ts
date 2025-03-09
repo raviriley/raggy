@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { runQuery } from '@/lib/neo4j';
+import { NextRequest, NextResponse } from "next/server";
+import { runQuery } from "@/lib/neo4j";
 
 export async function POST(request: NextRequest) {
   try {
     const { label, properties } = await request.json();
-    
+
     if (!label) {
       return NextResponse.json(
-        { error: 'Node label is required' },
-        { status: 400 }
+        { error: "Node label is required" },
+        { status: 400 },
       );
     }
 
@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     if (Object.keys(properties || {}).length > 0) {
       // If there are properties, use CREATE and then SET
       const propsString = Object.keys(properties || {})
-        .map(key => `n.${key} = $${key}`)
-        .join(', ');
-      
+        .map((key) => `n.${key} = $${key}`)
+        .join(", ");
+
       cypher = `
         CREATE (n:${label})
         SET ${propsString}
@@ -33,15 +33,15 @@ export async function POST(request: NextRequest) {
         RETURN n
       `;
     }
-    
+
     const result = await runQuery(cypher, properties || {});
-    
+
     return NextResponse.json({ success: true, node: result[0]?.n || null });
   } catch (error) {
-    console.error('Error creating node:', error);
+    console.error("Error creating node:", error);
     return NextResponse.json(
-      { error: 'Failed to create node', details: (error as Error).message },
-      { status: 500 }
+      { error: "Failed to create node", details: (error as Error).message },
+      { status: 500 },
     );
   }
 }
@@ -49,22 +49,22 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const label = searchParams.get('label');
-    
-    let cypher = 'MATCH (n)';
+    const label = searchParams.get("label");
+
+    let cypher = "MATCH (n)";
     if (label) {
       cypher = `MATCH (n:${label})`;
     }
-    cypher += ' RETURN n LIMIT 100';
-    
+    cypher += " RETURN n LIMIT 100";
+
     const result = await runQuery(cypher);
-    
-    return NextResponse.json({ nodes: result.map(record => record.n) });
+
+    return NextResponse.json({ nodes: result.map((record) => record.n) });
   } catch (error) {
-    console.error('Error fetching nodes:', error);
+    console.error("Error fetching nodes:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch nodes', details: (error as Error).message },
-      { status: 500 }
+      { error: "Failed to fetch nodes", details: (error as Error).message },
+      { status: 500 },
     );
   }
-} 
+}
