@@ -4,64 +4,64 @@ WORKDIR /frontend
 COPY centurion/ .
 # Create a minimal .eslintrc.json to disable ESLint
 RUN echo '{"extends": "next/core-web-vitals", "rules": {"@typescript-eslint/no-explicit-any": "off"}}' > .eslintrc.json
-RUN npm install
+# Install pnpm
+RUN npm install -g pnpm
+# Install dependencies with pnpm
+RUN pnpm install
 # Next.js configuration is already set to output static files
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Set environment variables for database connection
+ENV POSTGRES_USER=raggy_user
+ENV POSTGRES_PASSWORD=changeme
+ENV POSTGRES_DB=raggy
+ENV POSTGRES_HOST=localhost
+ENV POSTGRES_PORT=5432
+# Install pg for PostgreSQL connection
+RUN pnpm add pg
 # Build the Next.js app
-RUN npm run build
+RUN pnpm run build
 
-# Stage 2: Build Backend
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS backend-builder
-WORKDIR /flare-ai-rag
-COPY pyproject.toml README.md ./
-COPY src ./src
-RUN uv venv .venv && \
-    . .venv/bin/activate && \
-    uv pip install -e .
+# Stage 2: Final Image with PostgreSQL + pgvector
+FROM pgvector/pgvector:pg17
 
-# Stage 3: Final Image
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
-# Install OS-level dependencies needed for Qdrant
+# Set PostgreSQL environment variables
+# The initial postgres user is needed for database initialization
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=postgres
+ENV PGDATA=/var/lib/postgresql/data
+
+# These variables will be used by our application
+ENV RAGGY_USER=raggy_user
+ENV RAGGY_PASSWORD=changeme
+ENV RAGGY_DB=raggy
+
+# Install nginx for serving the frontend
 RUN apt-get update && \
     apt-get install -y \
-    wget \
-    tar \
-    curl \
     nginx \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-COPY --from=backend-builder /flare-ai-rag/.venv ./.venv
-COPY --from=backend-builder /flare-ai-rag/src ./src
-COPY --from=backend-builder /flare-ai-rag/pyproject.toml .
-COPY --from=backend-builder /flare-ai-rag/README.md .
-
-# Download and install Qdrant binary
-RUN wget https://github.com/qdrant/qdrant/releases/download/v1.13.4/qdrant-x86_64-unknown-linux-musl.tar.gz && \
-    tar -xzf qdrant-x86_64-unknown-linux-musl.tar.gz && \
-    mv qdrant /usr/local/bin/ && \
-    rm qdrant-x86_64-unknown-linux-musl.tar.gz
-
-# Make entrypoint executable
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Copy frontend files - Next.js static export goes to the 'out' directory
+# Copy frontend files to nginx directory
 COPY --from=frontend-builder /frontend/out /usr/share/nginx/html
 
-# Copy nginx configuration
+# Copy configuration files
 COPY nginx.conf /etc/nginx/sites-enabled/default
-
-# Setup supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY init-db.sql /docker-entrypoint-initdb.d/
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Allow workload operator to override environment variables
-LABEL "tee.launch_policy.allow_env_override"="OPENAI_API_KEY"
+LABEL "tee.launch_policy.allow_env_override"="POSTGRES_PASSWORD"
 LABEL "tee.launch_policy.log_redirect"="always"
 
-EXPOSE 80
+# Expose ports for both PostgreSQL and nginx
+EXPOSE 80 5432
 
-# Start supervisor (which will start both nginx and the backend)
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Start supervisor (which will start both nginx and PostgreSQL)
+CMD ["/entrypoint.sh"]

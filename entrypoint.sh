@@ -1,20 +1,17 @@
 #!/bin/bash
 
-# Clean up any previous storage that might cause conflicts
-mkdir -p ./storage
-rm -rf ./storage/*
-chmod -R 777 ./storage
+# This script ensures all services start properly
 
-# Start Qdrant in ephemeral mode
-qdrant &
+# Wait for PostgreSQL to be ready
+wait_for_postgres() {
+  echo "Waiting for PostgreSQL to start..."
+  until pg_isready -h localhost -p 5432 -U postgres > /dev/null 2>&1; do
+    echo "PostgreSQL is not ready yet, waiting..."
+    sleep 3
+  done
+  echo "PostgreSQL is up and running!"
+}
 
-# Wait until Qdrant is ready
-echo "Waiting for Qdrant to initialize..."
-until curl -s http://127.0.0.1:6333/collections >/dev/null; do
-  echo "Qdrant is not ready yet, waiting..."
-  sleep 10
-done
-echo "Qdrant is up and running!"
-
-# Start RAG application
-uv run start-backend
+# Start supervisord which will manage both nginx and PostgreSQL
+echo "Starting supervisord..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

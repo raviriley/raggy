@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         const fileContent = await fs.readFile(SOURCE_IDS_FILE, "utf-8");
         existingIds = fileContent.split("\n").filter((id) => id.trim());
       } catch (error) {
-        // File doesn't exist yet, that's ok
+        console.error("Error reading source IDs from file:", error);
       }
 
       // Combine existing and new IDs, removing duplicates
