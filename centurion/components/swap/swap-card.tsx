@@ -17,11 +17,17 @@ export type SwapFormData = {
   amount: number;
 };
 
+// Define a custom type for the onSubmit prop that can handle both form events and SwapFormData
+type SwapFormSubmitHandler = {
+  (data: SwapFormData): void;
+  (event: React.FormEvent<HTMLFormElement>): void;
+};
+
 export function SwapCard({
   className,
-  onSubmit,
-}: React.ComponentProps<"form"> & {
-  onSubmit?: (data: SwapFormData) => void;
+  ...props
+}: Omit<React.ComponentProps<"form">, "onSubmit"> & {
+  onSubmit?: SwapFormSubmitHandler;
 }) {
   const { address, isConnected } = useAccount();
   const { executeSwap } = useDirectSwap();
@@ -87,8 +93,8 @@ export function SwapCard({
       );
 
       // If onSubmit is provided, call it with the form data
-      if (onSubmit) {
-        onSubmit(formData);
+      if (props.onSubmit) {
+        props.onSubmit(formData);
       }
     } catch (error: any) {
       console.error("Swap error:", error);
@@ -99,7 +105,7 @@ export function SwapCard({
       } else if (error.message?.includes("insufficient funds")) {
         toast.error("Insufficient funds for this transaction");
       } else {
-        toast.error(`Error: ${error.message || "Failed to swap tokens"}`);
+        toast.error(`Swap failed: ${error.message || "Unknown error"}`);
       }
     } finally {
       setIsLoading(false);
@@ -110,20 +116,21 @@ export function SwapCard({
     <form
       className={cn("grid items-start gap-4", className)}
       onSubmit={handleSubmit}
+      {...props}
     >
       <div className="grid gap-2">
         <Label htmlFor="from">From</Label>
         <ComboBoxResponsive
-          selectedToken={fromToken}
           onTokenSelect={setFromToken}
+          selectedToken={fromToken}
           label="Select token"
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="to">To</Label>
         <ComboBoxResponsive
-          selectedToken={toToken}
           onTokenSelect={setToToken}
+          selectedToken={toToken}
           label="Select token"
         />
       </div>
@@ -132,20 +139,25 @@ export function SwapCard({
         <Input
           type="number"
           id="amount"
+          placeholder="Enter amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          min="0"
-          step="0.000001"
         />
       </div>
       <Button
         type="submit"
-        disabled={isLoading || !isConnected || !fromToken || !toToken}
+        disabled={isLoading || isApproving || !isConnected}
+        className="w-full"
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Swapping...
+          </>
+        ) : isApproving ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Approving...
           </>
         ) : !isConnected ? (
           "Connect Wallet to Swap"

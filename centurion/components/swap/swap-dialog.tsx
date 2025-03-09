@@ -17,15 +17,19 @@ interface SwapDialogProps {
 }
 
 export function SwapDialog({ open, onOpenChange, onSubmit }: SwapDialogProps) {
-  // We need to create a custom component that wraps SwapCard to handle the type mismatch
-  const CustomSwapCard = () => {
-    const handleSwapSubmit = (data: SwapFormData) => {
-      if (onSubmit) {
-        onSubmit(data);
-      }
-    };
-
-    return <SwapCard onSubmit={handleSwapSubmit} />;
+  // Create a handler that will be called when the swap is submitted
+  const handleSwapSubmit = (
+    dataOrEvent: SwapFormData | React.FormEvent<HTMLFormElement>
+  ) => {
+    // Only call the parent's onSubmit if we received SwapFormData
+    if (
+      onSubmit &&
+      "from" in dataOrEvent &&
+      "to" in dataOrEvent &&
+      "amount" in dataOrEvent
+    ) {
+      onSubmit(dataOrEvent);
+    }
   };
 
   return (
@@ -35,7 +39,7 @@ export function SwapDialog({ open, onOpenChange, onSubmit }: SwapDialogProps) {
           <DialogTitle>Swap Tokens</DialogTitle>
           <DialogDescription>Swap tokens on SparkDex</DialogDescription>
         </DialogHeader>
-        <CustomSwapCard />
+        <SwapCard onSubmit={handleSwapSubmit} />
       </DialogContent>
     </Dialog>
   );
