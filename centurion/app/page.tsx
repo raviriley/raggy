@@ -42,7 +42,7 @@ export default function Home() {
   const [showingCommands, setShowingCommands] = useState(false);
 
   function onSubmit(
-    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
+    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
 

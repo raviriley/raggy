@@ -21,7 +21,7 @@ if (!process.env.OPENROUTER_API_KEY) {
 const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 if (!openRouterApiKey) {
   throw new Error(
-    "OPENROUTER_API_KEY is not defined in the environment variables"
+    "OPENROUTER_API_KEY is not defined in the environment variables",
   );
 }
 
@@ -37,7 +37,7 @@ const MAX_TRANSACTIONS = 100; // Limit the total number of transactions to proce
 // Output file path
 const OUTPUT_PATH = path.resolve(
   process.cwd(),
-  "flare-mainnet-transactions.json"
+  "flare-mainnet-transactions.json",
 );
 
 interface TransactionData {
@@ -61,7 +61,7 @@ function delay(ms: number): Promise<void> {
 
 // Helper function to append transaction to file
 async function appendTransactionToFile(
-  transaction: TransactionData
+  transaction: TransactionData,
 ): Promise<void> {
   try {
     let existingData: TransactionData[] = [];
@@ -80,7 +80,7 @@ async function appendTransactionToFile(
     // Write back to file
     fs.writeFileSync(
       OUTPUT_PATH,
-      JSON.stringify(existingData, replaceBigInt, 2)
+      JSON.stringify(existingData, replaceBigInt, 2),
     );
 
     console.log(`Transaction ${transaction.hash} saved to file`);
@@ -92,7 +92,7 @@ async function appendTransactionToFile(
 // Function to get additional transaction context
 async function getTransactionContext(
   txData: ethers.TransactionResponse,
-  txReceipt: ethers.TransactionReceipt | null
+  txReceipt: ethers.TransactionReceipt | null,
 ): Promise<any> {
   const context: any = {};
 
@@ -130,7 +130,7 @@ async function getTransactionContext(
           const contract = new ethers.Contract(
             txData.to,
             tokenInterface,
-            provider
+            provider,
           );
 
           // Try to get token info
@@ -162,7 +162,7 @@ async function getTransactionContext(
       const block = await provider.getBlock(txReceipt.blockNumber);
       if (block) {
         context.blockTimestamp = new Date(
-          Number(block.timestamp) * 1000
+          Number(block.timestamp) * 1000,
         ).toISOString();
         context.blockGasLimit = block.gasLimit.toString();
         context.blockGasUsed = block.gasUsed.toString();
@@ -190,7 +190,7 @@ async function getTransactionContext(
 function formatTransactionData(
   txData: ethers.TransactionResponse,
   txReceipt: ethers.TransactionReceipt | null,
-  context: any
+  context: any,
 ): string {
   let formattedData = "";
 
@@ -278,7 +278,7 @@ function formatTransactionData(
 async function generateTransactionDescription(
   txData: ethers.TransactionResponse,
   txReceipt: ethers.TransactionReceipt | null,
-  blockInfo: any
+  blockInfo: any,
 ): Promise<string> {
   try {
     // Get additional context for the transaction
@@ -290,9 +290,9 @@ async function generateTransactionDescription(
     // Create a comprehensive prompt with all transaction data
     const prompt = `
       You are an expert blockchain analyst specializing in the Flare Network. Analyze this transaction from the Flare Mainnet and provide a detailed description of what's happening.
-      
+
       ${formattedData}
-      
+
       Based on the above transaction data, provide a thorough analysis of:
       1. What type of transaction this is (transfer, contract call, contract creation, etc.)
       2. The specific action being performed (token transfer, swap, staking, etc.)
@@ -300,7 +300,7 @@ async function generateTransactionDescription(
       4. The purpose and outcome of the transaction
       5. Any token transfers or state changes indicated by the event logs
       6. Any notable patterns, anomalies, or security concerns
-      
+
       Format your response as a clear, structured analysis with bullet points for key observations. Be specific about what you can determine with high confidence versus what is speculative. Include technical details where relevant.
     `;
 
@@ -319,7 +319,7 @@ async function generateTransactionDescription(
           "HTTP-Referer": "https://github.com/raggy",
           "X-Title": "Flare Mainnet Transaction Analysis",
         },
-      }
+      },
     );
 
     return (
@@ -346,7 +346,7 @@ async function fetchTransactions(): Promise<void> {
     // Calculate start block
     const startBlockNumber = Math.max(0, currentBlockNumber - BLOCKS_TO_FETCH);
     console.log(
-      `Fetching transactions from block ${startBlockNumber} to ${currentBlockNumber}`
+      `Fetching transactions from block ${startBlockNumber} to ${currentBlockNumber}`,
     );
 
     let transactionCount = 0;
@@ -392,14 +392,14 @@ async function fetchTransactions(): Promise<void> {
                 block: blockInfo,
               },
               replaceBigInt,
-              2
+              2,
             );
 
             // Generate AI description
             const description = await generateTransactionDescription(
               fullTx,
               fullTxReceipt,
-              blockInfo
+              blockInfo,
             );
 
             // Create transaction data object
