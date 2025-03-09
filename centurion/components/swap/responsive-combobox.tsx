@@ -18,51 +18,63 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import { Circle } from "lucide-react";
+import { FLARE_TOKENS } from "@/lib/config";
 
-type Token = {
+export type Token = {
   value: string;
   label: string;
-  icon: React.ReactNode;
+  icon: React.ReactNode | string;
+  address?: string;
+  decimals?: number;
 };
 
-const tokens: Token[] = [
-  {
-    value: "flare",
-    label: "Flare",
-    icon: <Circle />,
-  },
-  {
-    value: "weth",
-    label: "WETH",
-    icon: <Circle />,
-  },
-  {
-    value: "usdc",
-    label: "USDC",
-    icon: <Circle />,
-  },
-  {
-    value: "usdt",
-    label: "USDT",
-    icon: <Circle />,
-  },
-];
-
-export function ComboBoxResponsive() {
+export function ComboBoxResponsive({
+  onTokenSelect,
+  selectedToken,
+  label = "Set token",
+}: {
+  onTokenSelect?: (token: Token) => void;
+  selectedToken?: Token | null;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [localSelectedToken, setLocalSelectedToken] = useState<Token | null>(
+    selectedToken || null
+  );
+
+  const handleTokenSelect = (token: Token | null) => {
+    setLocalSelectedToken(token);
+    if (token && onTokenSelect) {
+      onTokenSelect(token);
+    }
+  };
+
+  const displayToken = selectedToken || localSelectedToken;
 
   if (isDesktop) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[150px] justify-start">
-            {selectedToken ? <>{selectedToken.label}</> : <>+ Set token</>}
+          <Button variant="outline" className="w-full justify-start">
+            {displayToken ? (
+              <div className="flex items-center gap-2">
+                {typeof displayToken.icon === "string" ? (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs">
+                    {displayToken.icon}
+                  </div>
+                ) : (
+                  displayToken.icon
+                )}
+                <span>{displayToken.label}</span>
+              </div>
+            ) : (
+              <>+ {label}</>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0" align="start">
-          <TokenList setOpen={setOpen} setSelectedToken={setSelectedToken} />
+          <TokenList setOpen={setOpen} setSelectedToken={handleTokenSelect} />
         </PopoverContent>
       </Popover>
     );
@@ -71,13 +83,26 @@ export function ComboBoxResponsive() {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button variant="outline" className="w-[150px] justify-start">
-          {selectedToken ? <>{selectedToken.label}</> : <>+ Set token</>}
+        <Button variant="outline" className="w-full justify-start">
+          {displayToken ? (
+            <div className="flex items-center gap-2">
+              {typeof displayToken.icon === "string" ? (
+                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs">
+                  {displayToken.icon}
+                </div>
+              ) : (
+                displayToken.icon
+              )}
+              <span>{displayToken.label}</span>
+            </div>
+          ) : (
+            <>+ {label}</>
+          )}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <div className="mt-4 border-t">
-          <TokenList setOpen={setOpen} setSelectedToken={setSelectedToken} />
+          <TokenList setOpen={setOpen} setSelectedToken={handleTokenSelect} />
         </div>
       </DrawerContent>
     </Drawer>
@@ -97,18 +122,27 @@ function TokenList({
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup>
-          {tokens.map((token) => (
+          {FLARE_TOKENS.map((token) => (
             <CommandItem
               key={token.value}
               value={token.value}
               onSelect={(value) => {
                 setSelectedToken(
-                  tokens.find((token) => token.value === value) || null,
+                  FLARE_TOKENS.find((token) => token.value === value) || null
                 );
                 setOpen(false);
               }}
             >
-              {token.label}
+              <div className="flex items-center gap-2">
+                {typeof token.icon === "string" ? (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs">
+                    {token.icon}
+                  </div>
+                ) : (
+                  <Circle />
+                )}
+                <span>{token.label}</span>
+              </div>
             </CommandItem>
           ))}
         </CommandGroup>

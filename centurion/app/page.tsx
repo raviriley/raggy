@@ -23,8 +23,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SwapForm } from "@/components/swap/swap-form";
+import { SwapCard, type SwapFormData } from "@/components/swap/swap-card";
 import { z } from "zod";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 export default function Home() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function Home() {
   const [showSwapDialog, setShowSwapDialog] = useState(false);
 
   function onSubmit(
-    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
+    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
   ) {
     e.preventDefault();
 
@@ -66,7 +67,7 @@ export default function Home() {
   });
 
   // Function to handle form submission
-  const handleSwapSubmit = (data: z.infer<typeof swapFormSchema>) => {
+  const handleSwapSubmit = (data: SwapFormData) => {
     try {
       // Validate the data
       swapFormSchema.parse(data);
@@ -82,12 +83,11 @@ export default function Home() {
           },
         },
         null,
-        2,
+        2
       );
 
       // Create an event-like object for handleSubmit
       const mockEvent = {
-        // todo: remove this
         preventDefault: () => {},
       };
 
@@ -97,6 +97,9 @@ export default function Home() {
 
       // Show success message
       toast.success("Swap request submitted");
+
+      // Close the dialog
+      setShowSwapDialog(false);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(`Validation error: ${error.errors[0].message}`);
@@ -132,6 +135,19 @@ export default function Home() {
     setShowingCommands(false);
   };
 
+  // Create a wrapper component for the swap form
+  function SwapFormWrapper() {
+    return (
+      <ResponsiveDialog
+        title="Swap Tokens"
+        description="Swap tokens on SparkDex"
+        onClose={() => setShowSwapDialog(false)}
+      >
+        <SwapCard onSubmit={handleSwapSubmit} />
+      </ResponsiveDialog>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="text-xl font-bold">
@@ -152,12 +168,7 @@ export default function Home() {
         </div>
       ))}
       {/* Render the SwapForm component when showSwapDialog is true */}
-      {showSwapDialog && (
-        <SwapForm
-          onSubmit={handleSwapSubmit}
-          onClose={() => setShowSwapDialog(false)}
-        />
-      )}
+      {showSwapDialog && <SwapFormWrapper />}
       <form onSubmit={onSubmit}>
         <Command
           className="rounded-lg border shadow-md md:min-w-[450px]"

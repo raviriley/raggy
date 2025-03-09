@@ -25,20 +25,31 @@ export function ResponsiveDialog({
   title,
   description,
   children,
+  onClose,
+  triggerButton,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
+  onClose?: () => void;
+  triggerButton?: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen && onClose) {
+      onClose();
+    }
+  };
+
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline">{title}</Button>
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        {triggerButton && (
+          <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -51,10 +62,8 @@ export function ResponsiveDialog({
   }
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button variant="outline">{title}</Button>
-      </DrawerTrigger>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      {triggerButton && <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>{title}</DrawerTitle>
@@ -63,7 +72,9 @@ export function ResponsiveDialog({
         {children}
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" onClick={() => onClose && onClose()}>
+              Cancel
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

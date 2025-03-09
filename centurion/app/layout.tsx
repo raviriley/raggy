@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
+import { WalletProvider } from "@/components/wallet-provider";
+import { ConnectWallet } from "@/components/connect-wallet";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,14 +39,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col h-screen">
-            <header className="flex items-center justify-between p-4 border-b">
-              <h1 className="text-2xl font-bold">Centurion</h1>
-              <ThemeToggle />
-            </header>
-            <main className="p-4">{children}</main>
-            <Toaster richColors />
-          </div>
+          <WalletProvider>
+            <div className="flex flex-col h-screen">
+              <header className="flex items-center justify-between p-4 border-b">
+                <h1 className="text-2xl font-bold">Centurion</h1>
+                <div className="flex items-center gap-4">
+                  <ConnectWallet />
+                  <ThemeToggle />
+                </div>
+              </header>
+              <main className="p-4">{children}</main>
+              <Toaster richColors />
+            </div>
+          </WalletProvider>
         </ThemeProvider>
       </body>
     </html>
