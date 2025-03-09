@@ -1,0 +1,3 @@
+cd centurion
+
+pnpm format
