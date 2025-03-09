@@ -12,8 +12,10 @@
     "cli-format": "prettier --check . --cache --cache-strategy content"
   },
   "dependencies": {
+    "@ai-sdk/google": "^1.1.20",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-slot": "^1.1.2",
+    "ai": "^4.1.54",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
