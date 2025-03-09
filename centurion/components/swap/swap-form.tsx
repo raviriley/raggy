@@ -3,17 +3,18 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ComboBoxResponsive } from "./responsive-combobox";
 
 function Swap({ className }: React.ComponentProps<"form">) {
   return (
     <form className={cn("grid items-start gap-4", className)}>
       <div className="grid gap-2">
         <Label htmlFor="from">From</Label>
-        <Input type="text" id="from" defaultValue="0x..." />
+        <ComboBoxResponsive />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="to">To</Label>
-        <Input type="text" id="to" defaultValue="0x..." />
+        <ComboBoxResponsive />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="amount">Amount</Label>
