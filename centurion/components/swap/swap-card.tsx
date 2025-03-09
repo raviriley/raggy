@@ -111,6 +111,27 @@ export function SwapCard({
         toast.error("Transaction was rejected by the user");
       } else if (error.message?.includes("insufficient funds")) {
         toast.error("Insufficient funds for this transaction");
+      } else if (error.message?.includes("execution reverted")) {
+        // Handle common DEX errors
+        if (error.message?.includes("INSUFFICIENT_OUTPUT_AMOUNT")) {
+          toast.error(
+            "Price impact too high. Try increasing slippage tolerance or reducing swap amount.",
+          );
+        } else if (error.message?.includes("EXCESSIVE_INPUT_AMOUNT")) {
+          toast.error(
+            "Swap would result in too much input. Try a smaller amount.",
+          );
+        } else if (error.message?.includes("TransactionDeadlinePassed")) {
+          toast.error("Transaction deadline passed. Please try again.");
+        } else if (error.message?.includes("V2InvalidPath")) {
+          toast.error(
+            "Invalid swap path. This token pair may not have a direct route.",
+          );
+        } else {
+          toast.error(
+            "Swap failed: The transaction was reverted by the blockchain. Try again with higher slippage.",
+          );
+        }
       } else {
         toast.error(`Error: ${error.message || "Failed to swap tokens"}`);
       }

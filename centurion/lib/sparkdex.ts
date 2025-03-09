@@ -46,7 +46,7 @@ export function useDirectSwap() {
     toToken: string,
     amount: string,
     fromDecimals: number,
-    slippagePercentage: number = 2, // Default 2% slippage
+    slippagePercentage: number = 5, // Increased default slippage to 5%
   ) => {
     if (!address || !walletClient || !publicClient) {
       throw new Error("Wallet not connected");
@@ -74,6 +74,10 @@ export function useDirectSwap() {
     const fromTokenAddress = formatAddress(fromToken);
     const toTokenAddress = formatAddress(toToken);
 
+    // Get WFLR address for path construction
+    const WFLR_ADDRESS =
+      "0x1d80c49bbbcd1c0911346656b529df9e5c2f783d" as `0x${string}`;
+
     // Parse amount with proper decimals
     const amountIn = parseUnits(amount, fromDecimals);
 
@@ -96,38 +100,67 @@ export function useDirectSwap() {
       if (!isFromNative) {
         console.log("Approving token spend...");
 
-        // Use wallet client directly for approval
-        const approveTxHash = await walletClient.writeContract({
+        // Check current allowance first
+        const currentAllowance = (await publicClient.readContract({
           address: fromTokenAddress,
           abi: ERC20_ABI,
-          functionName: "approve",
-          args: [SPARKDEX_CONTRACTS.router as `0x${string}`, amountIn],
-        });
+          functionName: "allowance",
+          args: [address, SPARKDEX_CONTRACTS.router as `0x${string}`],
+        })) as bigint;
 
-        console.log("Approval transaction submitted:", approveTxHash);
+        // Only approve if current allowance is less than amount
+        if (currentAllowance < amountIn) {
+          console.log("Current allowance insufficient, approving more...");
 
-        // Wait for approval transaction to be mined
-        const approvalReceipt = await publicClient.waitForTransactionReceipt({
-          hash: approveTxHash,
-        });
+          // Use wallet client directly for approval
+          const approveTxHash = await walletClient.writeContract({
+            address: fromTokenAddress,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [SPARKDEX_CONTRACTS.router as `0x${string}`, amountIn],
+          });
 
-        console.log("Approval confirmed:", approvalReceipt.transactionHash);
+          console.log("Approval transaction submitted:", approveTxHash);
+
+          // Wait for approval transaction to be mined
+          const approvalReceipt = await publicClient.waitForTransactionReceipt({
+            hash: approveTxHash,
+          });
+
+          console.log("Approval confirmed:", approvalReceipt.transactionHash);
+        } else {
+          console.log("Sufficient allowance already exists");
+        }
       }
 
-      // For the SparkDEX router, the command byte needs to be properly formatted
-      // Each byte in the commands string corresponds to one input in the inputs array
-      const commands = "0x0b0c" as const; // Two command bytes for two inputs
+      // For the SparkDEX router, use the correct command bytes
+      // 0x00: V2 exact input swap
+      // 0x01: V2 exact output swap
+      // 0x08: Unwrap WETH
+      // 0x09: Wrap ETH
+      // 0x0b: V2 swap exact in
+      // 0x0c: Recipient and deadline
+
+      // Select appropriate commands based on swap type
+      let commands;
+      if (isFromNative) {
+        commands = "0x090b0c"; // Wrap ETH, V2 swap exact in, Recipient and deadline
+      } else if (isToNative) {
+        commands = "0x0b0c08"; // V2 swap exact in, Recipient and deadline, Unwrap WETH
+      } else {
+        commands = "0x0b0c"; // V2 swap exact in, Recipient and deadline
+      }
 
       let swapInputs: `0x${string}`[] = [];
 
       if (isFromNative) {
-        // Native FLR to Token swap
+        // Native FLR to Token swap - use WFLR as intermediary
         const v2SwapParams = encodeAbiParameters(
           parseAbiParameters("uint256, uint256, address[]"),
           [
             amountIn, // Amount in
             amountOutMin, // Min amount out
-            [toTokenAddress], // Path (to token)
+            [WFLR_ADDRESS, toTokenAddress], // Path (WFLR to token)
           ],
         );
 
@@ -142,13 +175,13 @@ export function useDirectSwap() {
 
         swapInputs = [v2SwapParams, recipientAndDeadline];
       } else if (isToNative) {
-        // Token to Native FLR swap
+        // Token to Native FLR swap - use WFLR as intermediary
         const v2SwapParams = encodeAbiParameters(
           parseAbiParameters("uint256, uint256, address[]"),
           [
             amountIn, // Amount in
             amountOutMin, // Min amount out
-            [fromTokenAddress], // Path (from token)
+            [fromTokenAddress, WFLR_ADDRESS], // Path (from token to WFLR)
           ],
         );
 
@@ -192,6 +225,27 @@ export function useDirectSwap() {
       console.log("Commands:", commands);
       console.log("Swap inputs:", swapInputs);
 
+      // Estimate gas for the transaction
+      let estimatedGas;
+      try {
+        estimatedGas = await publicClient.estimateContractGas({
+          address: SPARKDEX_CONTRACTS.router as `0x${string}`,
+          abi: SparkRouterV2Abi,
+          functionName: "execute",
+          args: [commands, swapInputs],
+          value: isFromNative ? amountIn : BigInt(0),
+          account: address,
+        });
+
+        // Add a 50% buffer to the estimated gas
+        estimatedGas = (estimatedGas * BigInt(150)) / BigInt(100);
+        console.log("Estimated gas with buffer:", estimatedGas.toString());
+      } catch (error) {
+        console.warn("Gas estimation failed, using fallback:", error);
+        // Use a fallback gas limit if estimation fails
+        estimatedGas = BigInt(3000000);
+      }
+
       // Use wallet client directly for swap execution
       const swapTxHash = await walletClient.writeContract({
         address: SPARKDEX_CONTRACTS.router as `0x${string}`,
@@ -199,8 +253,7 @@ export function useDirectSwap() {
         functionName: "execute",
         args: [commands, swapInputs],
         value: isFromNative ? amountIn : BigInt(0),
-        // Add gas buffer
-        gas: BigInt(Math.floor(3000000 * 1.2)), // Use a reasonable gas estimate with buffer
+        gas: estimatedGas,
       });
 
       console.log("Swap transaction submitted:", swapTxHash);
