@@ -39,7 +39,7 @@ export default function Home() {
   });
 
   function onSubmit(
-    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>
+    e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
     handleSubmit(e);
