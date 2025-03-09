@@ -9,7 +9,8 @@
     "lint": "next lint",
     "format": "prettier --write . --cache --cache-strategy content",
     "typecheck": "tsc --noEmit --pretty --project tsconfig.json && echo '✔ TypeScript compilation passed'",
-    "cli-format": "prettier --check . --cache --cache-strategy content"
+    "cli-format": "prettier --check . --cache --cache-strategy content",
+    "evm-data": "tsx app/scripts/evm-data.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.1.20",
@@ -17,9 +18,12 @@
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-slot": "^1.1.2",
     "ai": "^4.1.54",
+    "axios": "^1.8.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
     "lucide-react": "^0.479.0",
     "next": "15.2.1",
     "next-themes": "^0.4.4",
@@ -28,7 +32,8 @@
     "sonner": "^2.0.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "tsx": "^4.19.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
