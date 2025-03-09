@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ComboBoxResponsive, Token } from "./responsive-combobox";
+import { TokenPicker, Token } from "./responsive-token-picker";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";

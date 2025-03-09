@@ -30,7 +30,7 @@ export type Token = {
   imageUrl?: string;
 };
 
-export function ComboBoxResponsive({
+export function TokenPicker({
   onTokenSelect,
   selectedToken,
   label = "Set token",
