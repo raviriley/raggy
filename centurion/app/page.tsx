@@ -3,7 +3,6 @@
 import {
   ArrowUpRight,
   Banknote,
-  CloudUpload,
   HandCoins,
   PiggyBank,
   Replace,
@@ -17,7 +16,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 import { useChat } from "@ai-sdk/react";
 import { cn } from "@/lib/utils";

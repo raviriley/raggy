@@ -1,19 +1,8 @@
-import {
-  Message,
-  NoSuchToolError,
-  InvalidToolArgumentsError,
-  ToolExecutionError,
-  streamText,
-  TextPart,
-  tool,
-  ToolCallPart,
-  ToolResultPart,
-} from "ai";
+import { streamText, tool } from "ai";
 import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { swapTokens } from "@/lib/actions/dex";
-import { revalidatePath } from "next/cache";
 import { findRelevantContent } from "@/lib/actions/rag";
 import { FLARE_TOKENS } from "@/lib/config";
 
