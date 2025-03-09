@@ -10,18 +10,15 @@ interface DocumentRow {
   similarity: number;
 }
 
-// Database connection configuration
+// Database connection configuration - directly using port-based connection
 const pool = new Pool({
-  user: process.env.POSTGRES_USER || "raggy_user",
-  // In Docker, we need to use the container name instead of localhost
-  // When in development, we'll use localhost
-  host:
+  // Use a direct connection string based on environment
+  connectionString:
     process.env.NODE_ENV === "production"
-      ? "localhost"
-      : process.env.POSTGRES_HOST || "localhost",
-  database: process.env.POSTGRES_DB || "raggy",
-  password: process.env.POSTGRES_PASSWORD || "changeme",
-  port: parseInt(process.env.POSTGRES_PORT || "5432"),
+      ? "postgresql://raggy_user:changeme@localhost:5432/raggy" // In container
+      : "postgresql://raggy_user:changeme@localhost:5432/raggy", // Local development
+  // Explicitly set to use password authentication and disable SSL
+  ssl: false,
 });
 
 // Function to generate embeddings using an embedding model
@@ -31,6 +28,11 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
   // For testing, return a random embedding of dimension 1536
   return Array.from({ length: 1536 }, () => Math.random());
+}
+
+// Format the embedding array as a proper pgvector string
+function formatEmbeddingForPgvector(embedding: number[]): string {
+  return `[${embedding.join(",")}]`;
 }
 
 const info = `
@@ -62,6 +64,8 @@ export async function findRelevantContent(question: string) {
   try {
     // 1. Generate embedding for the question
     const questionEmbedding = await generateEmbedding(question);
+    const questionEmbeddingString =
+      formatEmbeddingForPgvector(questionEmbedding);
 
     // 2. Perform cosine similarity search on the vector database (postgres)
     const query = `
@@ -73,7 +77,9 @@ export async function findRelevantContent(question: string) {
       LIMIT 3;
     `;
 
-    const result = await pool.query<DocumentRow>(query, [questionEmbedding]);
+    const result = await pool.query<DocumentRow>(query, [
+      questionEmbeddingString,
+    ]);
 
     // 3. Format the results into a string
     const formattedResults = result.rows
