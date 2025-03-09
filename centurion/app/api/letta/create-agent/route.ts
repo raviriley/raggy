@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs/promises";
+import path from "path";
 
 // Configuration
-const LETTA_API_URL = 'http://34.162.165.188:8283/v1/agents/';
-const SOURCE_IDS_FILE = path.join(process.cwd(), 'letta-source-ids.txt');
-const AGENT_ID_FILE = path.join(process.cwd(), 'letta-agent-id.txt');
+const LETTA_API_URL = "http://34.162.165.188:8283/v1/agents/";
+const SOURCE_IDS_FILE = path.join(process.cwd(), "letta-source-ids.txt");
+const AGENT_ID_FILE = path.join(process.cwd(), "letta-agent-id.txt");
 
 interface AgentConfig {
   name: string;
@@ -26,40 +26,50 @@ interface AgentConfig {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('📋 [LETTA CREATE] Request received to create a new agent');
+  console.log("📋 [LETTA CREATE] Request received to create a new agent");
   try {
     // Get agent configuration from request
     const { name, description } = await request.json();
-    
+
     // Validate required fields
     if (!name) {
       return NextResponse.json(
-        { error: 'Agent name is required' },
-        { status: 400 }
+        { error: "Agent name is required" },
+        { status: 400 },
       );
     }
-    
+
     // Check for API token
 
     // Read all source IDs from the file
     let sourceIds: string[] = [];
     try {
-      const fileContent = await fs.readFile(SOURCE_IDS_FILE, 'utf-8');
-      sourceIds = fileContent.split('\n').filter(id => id.trim());
-      
+      const fileContent = await fs.readFile(SOURCE_IDS_FILE, "utf-8");
+      sourceIds = fileContent.split("\n").filter((id) => id.trim());
+
       if (sourceIds.length === 0) {
         return NextResponse.json(
-          { error: 'No source IDs found in the file. Please embed some transactions first.' },
-          { status: 400 }
+          {
+            error:
+              "No source IDs found in the file. Please embed some transactions first.",
+          },
+          { status: 400 },
         );
       }
-      
-      console.log(`🔢 [LETTA CREATE] Found ${sourceIds.length} source IDs in file`);
-      console.log(`📄 [LETTA CREATE] First few source IDs: ${sourceIds.slice(0, 3).join(', ')}${sourceIds.length > 3 ? '...' : ''}`);
+
+      console.log(
+        `🔢 [LETTA CREATE] Found ${sourceIds.length} source IDs in file`,
+      );
+      console.log(
+        `📄 [LETTA CREATE] First few source IDs: ${sourceIds.slice(0, 3).join(", ")}${sourceIds.length > 3 ? "..." : ""}`,
+      );
     } catch (error) {
       return NextResponse.json(
-        { error: 'Failed to read source IDs file. Make sure you have embedded transactions first.' },
-        { status: 500 }
+        {
+          error:
+            "Failed to read source IDs file. Make sure you have embedded transactions first.",
+        },
+        { status: 500 },
       );
     }
 
@@ -70,19 +80,24 @@ export async function POST(request: NextRequest) {
     const payload = {
       name,
       agent_type: "memgpt_agent",
-      description: description || `Transaction analysis agent created on ${new Date().toISOString()}`,
+      description:
+        description ||
+        `Transaction analysis agent created on ${new Date().toISOString()}`,
       source_ids: source_ids, // Use source_ids instead of sources with complex objects
       model: "openai/gpt-4o-mini",
-      embedding: "openai/text-embedding-ada-002"
+      embedding: "openai/text-embedding-ada-002",
     };
 
-    console.log('📤 [LETTA CREATE] Creating agent with payload:', JSON.stringify(payload, null, 2));
+    console.log(
+      "📤 [LETTA CREATE] Creating agent with payload:",
+      JSON.stringify(payload, null, 2),
+    );
 
     // Call the Letta API
     const response = await fetch(LETTA_API_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
@@ -95,38 +110,39 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         // If we can't parse the error as JSON, just use the original error message
       }
-      
+
       return NextResponse.json(
         { error: errorMessage },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     // Parse and return the response
     const data = await response.json();
-    
+
     // Directly write the agent ID to the file
     try {
       await fs.writeFile(AGENT_ID_FILE, data.id);
       console.log(`💾 [LETTA CREATE] Agent ID ${data.id} written to file`);
     } catch (error) {
-      console.error('Error writing agent ID to file:', error);
+      console.error("Error writing agent ID to file:", error);
     }
-    
-    console.log(`✅ [LETTA CREATE] Agent created successfully with ID: ${data.id}`);
-    
+
+    console.log(
+      `✅ [LETTA CREATE] Agent created successfully with ID: ${data.id}`,
+    );
+
     return NextResponse.json({
       success: true,
       agent: data,
       sourceCount: sourceIds.length,
-      sources: sourceIds
+      sources: sourceIds,
     });
-    
   } catch (error) {
-    console.error('Error creating Letta agent:', error);
+    console.error("Error creating Letta agent:", error);
     return NextResponse.json(
-      { error: 'Failed to create agent', details: (error as Error).message },
-      { status: 500 }
+      { error: "Failed to create agent", details: (error as Error).message },
+      { status: 500 },
     );
   }
-} 
+}
