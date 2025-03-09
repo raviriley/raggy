@@ -7,6 +7,33 @@ import { findRelevantContent } from "@/lib/actions/rag";
 import { FLARE_TOKENS } from "@/lib/config";
 import fs from "fs/promises";
 import path from "path";
+import { Pool } from "pg";
+import { OpenAI } from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const pgPool = new Pool({
+  host: "34.162.165.188",
+  port: 5432,
+  database: "postgres",
+  user: "postgres",
+  password: process.env.POSTGRES_PASSWORD,
+});
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    const response = await openai.embeddings.create({
+      model: "text-embedding-ada-002",
+      input: text,
+    });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error("Error generating embedding:", error);
+    throw error;
+  }
+}
 
 // Set GOOGLE_GENERATIVE_AI_API_KEY from GEMINI_API_KEY if it's not already set
 if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY && process.env.GEMINI_API_KEY) {
@@ -268,6 +295,66 @@ const tools = {
     }),
     execute: async ({ question }) => findRelevantContent(question),
   }),
+  getProtocolInfo: tool({
+    description: `get information about protocols and how to do something on the Flare network by querying a specialized database of protocol documentation.`,
+    parameters: z.object({
+      query: z
+        .string()
+        .describe(
+          "the specific question about protocols or how to do something on the Flare network",
+        ),
+    }),
+    execute: async ({ query }) => {
+      try {
+        console.log(`🔍 [CHAT] Querying protocol database for: ${query}`);
+        const queryEmbedding = await generateEmbedding(query);
+        const embeddingStr = `[${queryEmbedding.join(",")}]`;
+
+        const result = await pgPool.query(
+          `
+          SELECT id, protocol_name, detailed_description, links, embedding 
+          FROM protocols 
+          ORDER BY embedding <-> $1::vector 
+          LIMIT 2;
+          `,
+          [embeddingStr],
+        );
+
+        console.log(
+          `✅ [CHAT] Found ${result.rows.length} protocol matches for query: ${query}`,
+        );
+
+        if (!result.rows || result.rows.length === 0) {
+          return {
+            type: "text",
+            text: "I couldn't find any specific protocol information about that. Could you rephrase your question?",
+          };
+        }
+
+        // Format the response
+        let resultText = `Here's what I found about ${query}:\n\n`;
+
+        result.rows.forEach((protocol, index) => {
+          resultText += `${protocol.protocol_name}:\n${protocol.detailed_description}\n\n`;
+          if (protocol.links) {
+            resultText += `Reference links: ${protocol.links}\n\n`;
+          }
+        });
+
+        return {
+          type: "text",
+          text: resultText,
+          rawData: result.rows,
+        };
+      } catch (error) {
+        console.error(`❌ [CHAT] Error querying protocol database:`, error);
+        return {
+          type: "text",
+          text: `I encountered an error while looking up protocol information. This might be due to a database connection issue.`,
+        };
+      }
+    },
+  }),
 };
 
 export async function POST(req: NextRequest) {
@@ -328,6 +415,16 @@ export async function POST(req: NextRequest) {
     }
 
     For token swaps, use the swapTokens tool and provide the user's wallet address as the wallet_to_swap_from parameter.
+
+    You have access to several tools to help with blockchain-related queries:
+    1. getTransactionInfo - Use this to look up information about a blockchain address or transaction hash
+    2. queryLettaAgent - Use this to get additional insights from the Letta agent about blockchain topics
+    3. extractAddresses - Use this to extract Ethereum addresses from text
+    4. getProtocolInfo - Use this to get detailed information about protocols and how to do specific tasks on the Flare network
+
+    When the user mentions an Ethereum address (starting with 0x followed by 40 hexadecimal characters), use the getTransactionInfo tool to look it up.
+    When the user asks complex blockchain questions, use the queryLettaAgent tool to get specialized knowledge.
+    When the user asks how to do something on the Flare network or about specific protocols, use the getProtocolInfo tool to get detailed instructions and documentation.
     `;
 
     // Enhance the system prompt with additional context from transaction neighbors and Letta agent
