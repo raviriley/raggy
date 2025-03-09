@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runQuery } from "@/lib/neo4j";
-import { int } from "neo4j-driver";
 
 export async function POST(request: NextRequest) {
   try {
