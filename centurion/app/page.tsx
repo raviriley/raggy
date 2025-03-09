@@ -186,13 +186,13 @@ export default function Home() {
                     const { fromToken, toToken, amount } = result;
                     const from = FLARE_TOKENS.find(
                       (t) =>
-                        t.value.toLowerCase() === fromToken.toLowerCase() ||
-                        t.label.toLowerCase() === fromToken.toLowerCase()
+                        t.value.toLowerCase() === fromToken?.toLowerCase() ||
+                        t.label.toLowerCase() === fromToken?.toLowerCase()
                     );
                     const to = FLARE_TOKENS.find(
                       (t) =>
-                        t.value.toLowerCase() === toToken.toLowerCase() ||
-                        t.label.toLowerCase() === toToken.toLowerCase()
+                        t.value.toLowerCase() === toToken?.toLowerCase() ||
+                        t.label.toLowerCase() === toToken?.toLowerCase()
                     );
                     return (
                       <div key={toolCallId}>
