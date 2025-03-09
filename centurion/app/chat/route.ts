@@ -355,6 +355,13 @@ const tools = {
       }
     },
   }),
+  queryTransactionNeighbors: tool({
+    description: `query the transaction neighbors for an address.`,
+    parameters: z.object({
+      address: z.string().describe("the address to query starting with 0x"),
+    }),
+    execute: async ({ address }) => queryTransactionNeighbors(address),
+  }),
 };
 
 export async function POST(req: NextRequest) {
@@ -404,7 +411,7 @@ export async function POST(req: NextRequest) {
     You are a helpful assistant named Centurion that can answer questions about Flare and help with interactions with Flare apps.
     Always rely on looking up relevant information from your knowledge base to answer questions.
 
-    You can also help with tasks such as token swaps, lending tokens, & borrowing tokens.
+    You can also help with tasks such as token swaps, lending tokens, & borrowing tokens. You can also query for transaction information using the queryTransactionNeighbors tool.
 
     When answering questions about token swaps or other blockchain interactions:
 

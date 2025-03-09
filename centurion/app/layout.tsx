@@ -41,7 +41,7 @@ export default function RootLayout({
         >
           <WalletProvider>
             <div className="flex flex-col h-screen">
-              <header className="flex items-center justify-between p-4 border-b">
+              <header className="flex items-center justify-between p-4 border-b border-pink-800">
                 <h1 className="text-2xl font-bold">Centurion</h1>
                 <div className="flex items-center gap-4">
                   <ConnectWallet />

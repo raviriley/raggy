@@ -29,11 +29,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FLARE_TOKENS } from "@/lib/config";
 import { useAccount } from "wagmi";
 import { ConnectWallet } from "@/components/connect-wallet";
+import Markdown from "react-markdown";
 
 export default function Home() {
   const router = useRouter();
 
   const { isConnected, address } = useAccount();
+
+  let loadingToast: string | number | undefined;
 
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: "/chat",
@@ -47,9 +50,11 @@ export default function Home() {
       };
     },
     onFinish: () => {
+      toast.dismiss(loadingToast);
       toast.success("Response has been created.");
     },
     onError: (error) => {
+      toast.dismiss(loadingToast);
       toast.error(`Error creating response: rate limit exceeded`);
     },
   });
@@ -65,6 +70,8 @@ export default function Home() {
     e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
     e.preventDefault();
+
+    loadingToast = toast.loading("Streaming response...");
 
     // Only submit the message if not using command UI
     if (!showingCommands) {
@@ -167,10 +174,15 @@ export default function Home() {
       {messages.map((m) => (
         <div
           key={m.id}
-          className={cn("whitespace-pre-wrap", m.role === "user" && "ml-auto")}
+          className={cn(
+            "whitespace-pre-wrap border rounded-lg p-2 border-pink-100",
+            m.role === "user" && "ml-auto",
+          )}
         >
           <div>
-            <div className="font-bold">{m.role}</div>
+            <div className="font-bold">
+              {m.role === "user" ? "You" : "Centurion"}
+            </div>
             <div className="text-sm text-gray-500">
               {m.toolInvocations?.map((t) => t.toolName).join(", ")}
             </div>
@@ -220,7 +232,7 @@ export default function Home() {
                 }
               })}
             </div>
-            <p>{m.content}</p>
+            <Markdown>{m.content}</Markdown>
           </div>
         </div>
       ))}
@@ -228,7 +240,7 @@ export default function Home() {
       <SwapDialog open={showSwapDialog} onOpenChange={setShowSwapDialog} />
       <form onSubmit={onSubmit}>
         <Command
-          className="rounded-lg border shadow-md md:min-w-[450px]"
+          className="rounded-lg border shadow-md md:min-w-[450px] border-pink-800"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               // If command menu is active, let it handle the Enter event

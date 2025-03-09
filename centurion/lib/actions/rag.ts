@@ -89,7 +89,7 @@ export async function findRelevantContent(question: string) {
       .join("\n");
 
     // 4. Return the formatted string
-    return formattedResults || "No relevant content found.";
+    return formattedResults || info;
   } catch (error) {
     console.error("Error searching for relevant content:", error);
     return "Error retrieving relevant content. Please try again.";
